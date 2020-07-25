@@ -12,43 +12,70 @@ class Cyclos:
         self.user = cfg.user
         self.password = cfg.password
         self.systemIDNEF = cfg.systemIDNEF
-        
+       
+    def getUser(self, user):
+        resp = requests.get(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        self.displayJson(resp.text)    
+
     def getUsers(self):
         resp = requests.get(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         self.displayJson(resp.text)
 
-    def addUser(self):
+    def addUser(self, username, name, email):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'username': 'toto1','name': 'Toto1', 'email': 'toto@gmail.com', 'group': 'MBN_Particuliers', "passwords": [
+        data = {'username': username, 'name': name, 'email': email, 'group': 'MBN_Particuliers', "passwords": [
             {
-            "type": "string",
+            "type": "login",
             "value": "azerty",
             "checkConfirmation": True,
             "confirmationValue": "azerty",
+            "forceChange": False
+            }
+        ],
+        "skipActivationEmail": True
+        }
+        resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        self.displayJson(resp.text)
+        return resp.text
+
+    def addPro(self, adh_id, username, email, addresses):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {"username": username,"name": username, "email": email, "group": "MBN_Pros", "passwords": [
+            {
+            "type": "login",
+            "value": "1234",
+            "checkConfirmation": True,
+            "confirmationValue": "1234",
             "forceChange": True
             }
         ],
+        "customValues":
+            { 
+            "Autorisation_eflorain_pro": "oui_eflorain_pro",
+            "Autorisation_eflorain_part": "oui_eflorain_part",
+            "Num_adherent_pro": adh_id
+        },
         "skipActivationEmail": True,
-        "addresses": [
-            {
-            "name": "Maison",
-            "addressLine1": "5 rue du Pierre Desproges",
-            "zip": "54000",
-            "city": "Nancy",
-            "country": "France",
-            "defaultAddress": True
-            }
-        ]}
+        "acceptAgreement": True,
+        "addresses": addresses
+        }
         resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print resp
+        self.displayJson(resp.text)
+        return resp.text
+
+    #def deleteUser(self, user):
+
+
+    def getPasswords(self, user):
+        resp = requests.get(self.url+'/'+user+'/passwords', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         self.displayJson(resp.text)
 
-    def setPaymentSystemtoUser(self, user):
+    def setPaymentSystemtoUser(self, user, amount):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'amount': '10', 'subject': user, 'type': 'MBNNEF.NEF_transfer_user', 'description': 'tefdsfdsfd0'}
+        data = {'amount': amount, 'subject': user, 'type': 'MBNNEF.NEFtransferuser', 'description': 'tefdsfdsfd1'}      
         print data
-        resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print resp
+        #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         self.displayJson(resp.text)
 
     def getPayments(self, user):
@@ -62,7 +89,7 @@ class Cyclos:
 
     def createAddress(self, user):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'name': 'Default', 'zip': '55210', 'city': 'Saint-Maurice-sous-les-côtes', 'country': 'FR', 'defaultaddress': True, 'addressLine1': '34 Rue de l\'Église'}
+        data = {'name': 'Default', 'zip': '54200', 'city': 'Royaumeix', 'country': 'FR', 'defaultaddress': True, 'street': '10B rue d\'Alsace'}
         print(data)
         resp = requests.post(self.url+'/'+user+'/addresses', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         print resp
@@ -84,3 +111,43 @@ class Cyclos:
         json_object = json.loads(json_text)
         json_formatted_str = json.dumps(json_object, indent=2)
         print(json_formatted_str)
+
+    def resetPassword(self, user):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {'w': 'email'}
+        resp = requests.post(self.url+'/'+user+'/passwords/login/reset-and-send', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        print resp
+        #self.displayJson(resp.text)
+
+    def changePassword(self, user, oldpassword, newpassword):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {'oldPassword': oldpassword, 'newPassword': newpassword, 'checkConfirmation': True, 'newPasswordConfirmation': newpassword, 'forceChange': True}
+        print data
+        resp = requests.post(self.url+'/'+user+'/passwords/login/change', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        print resp
+        #self.displayJson(resp.text)
+
+    def enablePassword(self, user):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {}
+        resp = requests.post(self.url+'/'+user+'/passwords/login/enable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        print resp
+        self.displayJson(resp.text)
+
+    def disablePassword(self, user):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {}
+        resp = requests.post(self.url+'/'+user+'/passwords/login/disable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        print resp
+        self.displayJson(resp.text)
+
+    def generatePassword(self, user):
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {}
+        resp = requests.post(self.url+'/'+user+'/passwords/login/allow-generation', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        print resp
+        self.displayJson(resp.text)
+
+    def getPasswords(self, user):
+        resp = requests.get(self.url+'/'+user+'/passwords/login', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        self.displayJson(resp.text)
