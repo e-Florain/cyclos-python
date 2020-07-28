@@ -8,18 +8,34 @@ import config as cfg
 class Cyclos:
 
     def __init__(self):
-        self.url = cfg.url
-        self.user = cfg.user
-        self.password = cfg.password
-        self.systemIDNEF = cfg.systemIDNEF
+        self.url = cfg.cyclos['url']
+        self.user = cfg.cyclos['user']
+        self.password = cfg.cyclos['password']
+        requests.packages.urllib3.disable_warnings() 
        
     def getUser(self, user):
         resp = requests.get(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)    
+        #self.displayJson(resp.text)    
+        return json.loads(resp.text)
 
     def getUsers(self):
         resp = requests.get(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        #self.displayJson(resp.text)
+        return json.loads(resp.text)
+
+    def getLoginFromEmail(self, email):
+        users = self.getUsers()
+        for user in users:
+            userdetails = self.getUser(user['shortDisplay'])
+            if (userdetails['email'].lower() == email.lower()):
+                return user['shortDisplay']
+
+    def getIdFromEmail(self, email):
+        users = self.getUsers()
+        for user in users:
+            userdetails = self.getUser(user['shortDisplay'])
+            if (userdetails['email'].lower() == email.lower()):
+                return user['id']
 
     def addUser(self, username, name, email):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -63,20 +79,17 @@ class Cyclos:
         self.displayJson(resp.text)
         return resp.text
 
-    #def deleteUser(self, user):
-
-
     def getPasswords(self, user):
         resp = requests.get(self.url+'/'+user+'/passwords', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         self.displayJson(resp.text)
 
-    def setPaymentSystemtoUser(self, user, amount):
+    def setPaymentSystemtoUser(self, user, amount, description):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'amount': amount, 'subject': user, 'type': 'MBNNEF.NEFtransferuser', 'description': 'tefdsfdsfd1'}      
-        print data
+        data = {'amount': amount, 'subject': user, 'type': 'MBNNEF.NEFtransferuser', 'description': description}      
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        self.displayJson(resp.text)
+        #self.displayJson(resp.text)
+        return json.loads(resp.text)
 
     def getPayments(self, user):
         resp = requests.get(self.url+'/'+user+'/payments/data-for-perform', auth=HTTPBasicAuth(self.user, self.password), verify=False)

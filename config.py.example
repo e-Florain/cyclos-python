@@ -1,4 +1,11 @@
-url="https://demo.cyclos.org/api"
-user="adminAPI"
-password="xxxx"
-systemIDNEF="xxxxxxx"
+ha = {'url': 'https://api.helloasso.com/v3/payments.json',
+      'user': 'xxxx',
+      'password': 'xxxx',
+      'transactions': 'transactions.json'}
+db = {'name': 'florain',
+      'user': 'root',
+      'password': 'xxxx'}
+cyclos = {'url': 'https://cyclos.guigeek.org/api',
+          'user': 'adminAPI',
+          'password': 'xxxx',
+          'systemIDNEF': 'xxxx'}
