@@ -36,6 +36,7 @@ class Cyclos:
             userdetails = self.getUser(user['shortDisplay'])
             if (userdetails['email'].lower() == email.lower()):
                 return user['id']
+        return False
 
     def addUser(self, username, name, email):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}

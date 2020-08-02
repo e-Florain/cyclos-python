@@ -18,7 +18,7 @@ now = datetime.now()
 last_hour_date_time = datetime.now() - timedelta(days = 2)
 url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
 params = {'results_per_page': 1000}
-r = requests.get(cfg.ha['url'], auth=(cfg.ha['user'], cfg.ha['password']), params=params)
+r = requests.get(url, auth=(cfg.ha['user'], cfg.ha['password']), params=params)
 result = json.loads(r.text)
 if 'resources' in result:
     resources = result['resources']
