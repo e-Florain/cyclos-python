@@ -60,17 +60,26 @@ for data in result['data']:
                 amount = item['amount']
             accountID = cyclos.getIdFromEmail(data['payer']['email'])
             amountCyclos = amount/100
-            print amountCyclos
-            res = cyclos.setPaymentSystemtoUser(accountID, resource['amount'],"Transaction via HelloAsso Id : "+data['order']['id'])
-            res = {}
-            res['transactionNumber']="XXX"
-            tmp = {
-                'date': data['order']['date'],
-                'transactionCyclos' : res['transactionNumber'],
-                'formulaire': data['order']['formSlug'],
-                'email': data['payer']['email'],
-                'amount': amountCyclos
-            }
+            if (accountID != False):
+                #print amountCyclos
+                res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                #res = {}
+            #res['transactionNumber']="XXX"
+                tmp = {
+                    'date': data['order']['date'],
+                    'transactionCyclos' : res['transactionNumber'],
+                    'formulaire': data['order']['formSlug'],
+                    'email': data['payer']['email'],
+                    'amount': amountCyclos
+                }
+            else:
+                tmp = {
+                    'date': data['order']['date'],
+                    'formulaire': data['order']['formSlug'],
+                    'email': data['payer']['email'],
+                    'amount': amountCyclos,
+                    'error': 'email not found'
+                }
             listtransactions[data['order']['id']] = tmp
     print ""
 #print listtransactions
