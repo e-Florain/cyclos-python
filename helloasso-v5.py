@@ -53,7 +53,7 @@ for data in result['data']:
     #print data['order']['id']
     #print listtransactions
     #print data['order']['id'] not in listtransactions
-    if (str(data['order']['id']) not in listtransactions):
+    if (str(data['id']) not in listtransactions):
         if ((data['order']['formSlug'] == 'change-florain-numerique-credit-unitaire') or
             (data['order']['formSlug'] == 'test-change-florain-numerique-credit-mensuel')):
             for item in data['items']:
@@ -66,7 +66,9 @@ for data in result['data']:
                 #res = {}
             #res['transactionNumber']="XXX"
                 tmp = {
-                    'date': data['order']['date'],
+                    'date': data['date'],
+                    'orderdate': data['order']['date'],
+                    'orderid': data['order']['id'],
                     'transactionCyclos' : res['transactionNumber'],
                     'formulaire': data['order']['formSlug'],
                     'email': data['payer']['email'],
@@ -74,13 +76,15 @@ for data in result['data']:
                 }
             else:
                 tmp = {
-                    'date': data['order']['date'],
+                    'date': data['date'],
+                    'orderdate': data['order']['date'],
+                    'orderid': data['order']['id'],
                     'formulaire': data['order']['formSlug'],
                     'email': data['payer']['email'],
                     'amount': amountCyclos,
                     'error': 'email not found'
                 }
-            listtransactions[data['order']['id']] = tmp
+            listtransactions[data['id']] = tmp
     print ""
 #print listtransactions
 with open(cfg.ha['transactions'], 'w') as outfile:
