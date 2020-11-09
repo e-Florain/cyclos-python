@@ -55,9 +55,9 @@ class Cyclos:
         self.displayJson(resp.text)
         return resp.text
 
-    def addPro(self, adh_id, username, email, addresses):
+    def addPro(self, adh_id, name, email, addresses):
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {"username": username,"name": username, "email": email, "group": "MBN_Pros", "passwords": [
+        data = {"username": email,"name": username, "email": email, "group": "MBN_Pros", "passwords": [
             {
             "type": "login",
             "value": "1234",
