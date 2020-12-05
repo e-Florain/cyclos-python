@@ -32,7 +32,8 @@ ha = HelloAsso()
 @app.route('/')
 def hello_world():
     webLogger.info(LOG_HEADER + '[/] GET')
-    return 'Hello, World!'
+    ha.setTransactionstoCyclos()
+    return 'Check Paiments - 200 - OK'
 
 @app.route('/paiement')
 def paiement():

@@ -72,17 +72,28 @@ class HelloAsso:
                     if (accountID != False):
                         #print amountCyclos
                         res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
-                        #res = {}
+		   #res = {}
                     #res['transactionNumber']="XXX"
-                        tmp = {
-                            'date': data['date'],
-                            'orderdate': data['order']['date'],
-                            'orderid': data['order']['id'],
-                            'transactionCyclos' : res['transactionNumber'],
-                            'formulaire': data['order']['formSlug'],
-                            'email': data['payer']['email'],
-                            'amount': amountCyclos
-                        }
+                        if ('transactionNumber' in res):
+                            tmp = {
+                                'date': data['date'],
+                                'orderdate': data['order']['date'],
+                                'orderid': data['order']['id'],
+                                'transactionCyclos' : res['transactionNumber'],
+                                'formulaire': data['order']['formSlug'],
+                                'email': data['payer']['email'],
+                                'amount': amountCyclos
+                            }
+                        else:
+                            tmp = {
+                                'date': data['date'],
+                                'orderdate': data['order']['date'],
+                                'orderid': data['order']['id'],
+                                'transactionCyclos' : 'None',
+                                'formulaire': data['order']['formSlug'],
+                                'email': data['payer']['email'],
+                                'amount': amountCyclos
+                            }
                     else:
                         tmp = {
                             'date': data['date'],
