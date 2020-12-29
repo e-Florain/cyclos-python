@@ -74,57 +74,74 @@ def getChangesAdhPros(connection, cyclos, force, simulate):
             #print("DELETE")
             #print(k)
             changes = dict()
+            listchanges = list()
+            changes['dbtochange'] = 'cyclos'
             changes['type'] = 'delete'
-            changesDB[k] = changes
+            listchanges.append(changes)
+            changesDB[k] = listchanges
         #break
     for k, v in listUsersSQL.items():
         #print("CREATE")
-        if (k not in listUsersCyclos):            
-            unaccented_string = unidecode.unidecode(v["orga_name"])
-            addresses = [
-                {
-                "name": "Siege Social",
-                "street": v["address"],
-                "zip": v["postcode"],
-                "city": v["city"],
-                "country": "FR",
-                "defaultAddress": True
-                }
-            ]
-            changes = dict()
-            changes['type'] = 'create'
-            infostocreate = dict()
-            infostocreate['email'] = v['email']
-            infostocreate['adh_id'] = v['adh_id']
-            infostocreate['name'] = v['adh_id']
-            infostocreate['addresses'] = unaccented_string
-            changes['infos'] = infostocreate
-            changesDB[k] = changes
-            if (not simulate):
-                result_json = cyclos.addPro(v["adh_id"], unaccented_string, v["email"], addresses)
-                result = json.loads(result_json)
-                if "user" in result:
-                    id = result["user"]["id"]
-                    cyclos.resetPassword(id)
-                    print (id)
-        else:
-            #print("COMPARE")
-            changed = False
-            changes = dict()
-            listchanges = list()
-            if (unidecode.unidecode(v["orga_name"]) != unidecode.unidecode(listUsersCyclos[k]["display"])):
-                #print (listUsersCyclos[k]["display"])
-                changes['field'] = 'display'
-                changes['newvalue'] = unidecode.unidecode(v["orga_name"])
-                changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
-                changes['type'] = 'modify'
-                changed = True
+        if (v["cyclos_account"]):
+            if (k not in listUsersCyclos):            
+                unaccented_string = unidecode.unidecode(v["orga_name"])
+                addresses = [
+                    {
+                    "name": "Siege Social",
+                    "street": v["address"],
+                    "zip": v["postcode"],
+                    "city": v["city"],
+                    "country": "FR",
+                    "defaultAddress": True
+                    }
+                ]
+                changes = dict()
+                listchanges = list()
+                changes['type'] = 'create'
+                infostocreate = dict()
+                infostocreate['dbtochange'] = 'cyclos'
+                infostocreate['email'] = v['email']
+                infostocreate['adh_id'] = v['adh_id']
+                infostocreate['name'] = v['adh_id']
+                infostocreate['addresses'] = unaccented_string
+                changes['infos'] = infostocreate
                 listchanges.append(changes)
-            if (changed):
                 changesDB[k] = listchanges
+                if (not simulate):
+                    result_json = cyclos.addPro(v["adh_id"], unaccented_string, v["email"], addresses)
+                    result = json.loads(result_json)
+                    if "user" in result:
+                        id = result["user"]["id"]
+                        cyclos.resetPassword(id)
+                        print (id)
+            else:
+                #print("COMPARE")
+                changed = False
+                changes = dict()
+                listchanges = list()
+                if (unidecode.unidecode(v["orga_name"]) != unidecode.unidecode(listUsersCyclos[k]["display"])):
+                    #print (listUsersCyclos[k]["display"])
+                    changes['field'] = 'display'
+                    changes['newvalue'] = unidecode.unidecode(v["orga_name"])
+                    changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
+                    changes['type'] = 'modify'
+                    # A changer par la suite avec la date de modification
+                    changes['dbtochange'] = 'cyclos'
+                    changed = True
+                    listchanges.append(changes)
+                if (changed):
+                    changesDB[k] = listchanges
     #print(changesDB)
     with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json', 'w') as outfile:
         json.dump(changesDB, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+
+def applyChangesAdhPros(connection, cyclos, force, simulate):
+    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json') as data_file:
+        datas = json.load(data_file)
+        for k, v in datas.items():
+            print(k)
+            print(v)
+
 
 def getUserSQL():
     listusers=dict()
@@ -172,4 +189,7 @@ if __name__ == '__main__':
         simulate = False
     connection = connect()
     cyclos = Cyclos()
-    getChangesAdhPros(connection, cyclos, force, simulate)
+    if (simulate):
+        getChangesAdhPros(connection, cyclos, force, simulate)
+    else:
+        applyChangesAdhPros(connection, cyclos, force, simulate)
