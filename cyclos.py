@@ -18,8 +18,8 @@ class Cyclos:
         #self.displayJson(resp.text)    
         return json.loads(resp.text)
 
-    def getUsers(self):
-        resp = requests.get(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+    def getUsers(self, group):
+        resp = requests.get(self.url+'/users?groups='+group+'&pageSize=10000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         #self.displayJson(resp.text)
         return json.loads(resp.text)
 
