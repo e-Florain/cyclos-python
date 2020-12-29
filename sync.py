@@ -4,22 +4,25 @@
 import pymysql
 import pymysql.cursors
 import cyclos
+import argparse
 from cyclos import Cyclos
 import re
+import os
 import unidecode
 import json
+import config as cfg
 
 def connect():
     connection = pymysql.connect(host='localhost',
-        user='root',
-        password='xxxx',
-        db='florain',
+        user=cfg.db['user'],
+        password=cfg.db['password'],
+        db=cfg.db['name'],
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor)
     return connection
 
 
-def syncAdhs(connection, cyclos):
+def syncAdhs(connection, cyclos, force, simulate):
     try:
         with connection.cursor() as cursor:
             # Create a new record
@@ -34,73 +37,139 @@ def syncAdhs(connection, cyclos):
                 if "user" in result:
                     id = result["user"]["id"]
                     cyclos.resetPassword(id)
-                    print id
+                    print(id)
                 else:
                     if "username" in result["propertyErrors"]:
                         err = result["propertyErrors"]["username"][0]
                         if (re.match(".*unique.*", err)):
-                            print "Utilisateur deja existant"
+                            print("Utilisateur deja existant")
                             users_json = cyclos.getUsers()
                             users = json.loads(users_json)
-                            print  
+                            print(users)
 
     finally:
         connection.close()
 
-def syncAdhpros(connection, cyclos):
+#
+#
+# changesDB = array(
+# mail => array(
+#       'dbtochange' => sql or cyclos
+#       'fieldtochange' => 
+#       'lastmodified' =>
+#       'oldvalue' =>
+#       'newvalue' =>
+#       'type' => create or modify
+#   )
+# )
+#
+def getChangesAdhPros(connection, cyclos, force, simulate):
+    changesDB = dict()
+    listUsersSQL = getUserSQL()
+    #print(listUsersSQL)
+    listUsersCyclos = getUsersCyclos(cyclos, "MBN_Pros")
+    #print(listUsersCyclos)
+    for k, v in listUsersCyclos.items():
+        if (k not in listUsersSQL):
+            #print("DELETE")
+            #print(k)
+            changes = dict()
+            changes['type'] = 'delete'
+            changesDB[k] = changes
+        #break
+    for k, v in listUsersSQL.items():
+        #print("CREATE")
+        if (k not in listUsersCyclos):            
+            unaccented_string = unidecode.unidecode(v["orga_name"])
+            addresses = [
+                {
+                "name": "Siege Social",
+                "street": v["address"],
+                "zip": v["postcode"],
+                "city": v["city"],
+                "country": "FR",
+                "defaultAddress": True
+                }
+            ]
+            changes = dict()
+            changes['type'] = 'create'
+            infostocreate = dict()
+            infostocreate['email'] = v['email']
+            infostocreate['adh_id'] = v['adh_id']
+            infostocreate['name'] = v['adh_id']
+            infostocreate['addresses'] = unaccented_string
+            changes['infos'] = infostocreate
+            changesDB[k] = changes
+            if (not simulate):
+                result_json = cyclos.addPro(v["adh_id"], unaccented_string, v["email"], addresses)
+                result = json.loads(result_json)
+                if "user" in result:
+                    id = result["user"]["id"]
+                    cyclos.resetPassword(id)
+                    print (id)
+        else:
+            #print("COMPARE")
+            changed = False
+            changes = dict()
+            listchanges = list()
+            if (unidecode.unidecode(v["orga_name"]) != unidecode.unidecode(listUsersCyclos[k]["display"])):
+                #print (listUsersCyclos[k]["display"])
+                changes['field'] = 'display'
+                changes['newvalue'] = unidecode.unidecode(v["orga_name"])
+                changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
+                changes['type'] = 'modify'
+                changed = True
+                listchanges.append(changes)
+            if (changed):
+                changesDB[k] = listchanges
+    #print(changesDB)
+    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json', 'w') as outfile:
+        json.dump(changesDB, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+
+def getUserSQL():
+    listusers=dict()
     try:
         with connection.cursor() as cursor:
             # Create a new record
             sql = "SELECT * from adhpros"
             cursor.execute(sql)
             results = cursor.fetchall()
+            #print(results)
             for result in results:
-                print(result)
-                unaccented_string = unidecode.unidecode(result["orga_name"])
-                username = re.sub('[^A-Za-z0-9]+', '', unaccented_string).lower()
-                username = (username[:16]) if len(username) > 16 else username
-                #username = result["orga_name"][0].lower()+result["orga_name"][1:].lower()
-                print "username "+username
-                print len(username)
-                addresses = [
-                    {
-                    "name": "Siege Social",
-                    "street": result["address"],
-                    "zip": result["postcode"],
-                    "city": result["city"],
-                    "country": "FR",
-                    "defaultAddress": True
-                    }
-                ]
-                #print addresses
-                result_json = cyclos.addPro(result["adh_id"], username, result["email"], addresses)
-                result = json.loads(result_json)
-                if "user" in result:
-                    id = result["user"]["id"]
-                    cyclos.resetPassword(id)
-                    print id
+                #print (result["cyclos_account"])
+                listusers[result['email']] = result
+            return listusers
     finally:
         connection.close()
+    
 
-connection = connect()
-cyclos = Cyclos()
-#syncAdhpros(connection, cyclos)
-syncAdhs(connection, cyclos)
-#cyclos.getPasswords("GROTest01")
+def getUsersCyclos(cyclos, group):
+    listusers=dict()
+    users = cyclos.getUsers(group)
+    for user in users:
+        #print user
+        userinfo = cyclos.getUser(user['id'])
+        #print (userinfo)
+        #print (user['shortDisplay'])
+        listusers[user['shortDisplay']] = userinfo
+    return listusers
 
-#cyclos.changePassword("larbrevike","", "1234")
-#cyclos.changePassword("ledomainedessave","", "1234")
-#cyclos.enablePassword("ledomainedessave")
-#cyclos.getPasswords("larbrevike")
-#cyclos.getUsers()
-#cyclos.getUser("4190760854218714008")
-#cyclos.resetPassword("4190760854218714008")
-#cyclos.getPasswords("4190760854218714008")
-
-#syncAdhs(connection, cyclos)
-#cyclos.getPasswords("larbrevike")
-#cyclos.resetPassword("larbrevike")
-
-#curl --user adminAPI:1234 -XGET "http://192.168.100.5:8080/api/larbrevike/passwords/login"
-#
-#cyclos.setPaymentSystemtoUser("goroche", 50)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-force", help="force la synchronisation",
+        action="store_true")
+    #parser.add_argument("-days", help="efface les messages plus vieux que le nombre de jours precises", type=int)
+    parser.add_argument("-simulate", help="simule et affiche la liste des informations qui seront modifées",
+        action="store_true")
+    args = parser.parse_args()
+    if args.force:
+        force = True
+    else:
+        force = False
+    if args.simulate:
+        simulate = True
+    else:
+        simulate = False
+    connection = connect()
+    cyclos = Cyclos()
+    getChangesAdhPros(connection, cyclos, force, simulate)
