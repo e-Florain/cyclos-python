@@ -22,7 +22,7 @@ def connect():
     return connection
 
 
-def syncAdhs(connection, cyclos, force, simulate):
+def syncAdhs(connection, cyclos):
     try:
         with connection.cursor() as cursor:
             # Create a new record
@@ -63,13 +63,15 @@ def syncAdhs(connection, cyclos, force, simulate):
 #   )
 # )
 #
-def getChangesAdhPros(connection, cyclos, force, simulate):
+def getChangesAdhPros(connection, cyclos):
     changesDB = dict()
     listUsersSQL = getUserSQL()
     #print(listUsersSQL)
     listUsersCyclos = getUsersCyclos(cyclos, "MBN_Pros")
     #print(listUsersCyclos)
     for k, v in listUsersCyclos.items():
+        #print(k)
+        #print(v)
         if (k not in listUsersSQL):
             #print("DELETE")
             #print(k)
@@ -81,9 +83,10 @@ def getChangesAdhPros(connection, cyclos, force, simulate):
             changesDB[k] = listchanges
         #break
     for k, v in listUsersSQL.items():
-        #print("CREATE")
+        #print("CREATE "+k)
         if (v["cyclos_account"]):
-            if (k not in listUsersCyclos):            
+            if (k not in listUsersCyclos):
+                #print("CREATE")         
                 unaccented_string = unidecode.unidecode(v["orga_name"])
                 addresses = [
                     {
@@ -98,22 +101,32 @@ def getChangesAdhPros(connection, cyclos, force, simulate):
                 changes = dict()
                 listchanges = list()
                 changes['type'] = 'create'
+                changes['dbtochange'] = 'cyclos'
                 infostocreate = dict()
-                infostocreate['dbtochange'] = 'cyclos'
                 infostocreate['email'] = v['email']
                 infostocreate['adh_id'] = v['adh_id']
-                infostocreate['name'] = v['adh_id']
-                infostocreate['addresses'] = unaccented_string
+                infostocreate['name'] = unaccented_string
+                addresses = [
+                    {
+                        "name": "Siege Social",
+                        "street": v['address'],
+                        "zip": v['postcode'],
+                        "city": v['city'],
+                        "country": "FR",
+                        "defaultAddress": True
+                    }
+                ]
+                infostocreate['addresses'] = addresses
                 changes['infos'] = infostocreate
                 listchanges.append(changes)
                 changesDB[k] = listchanges
-                if (not simulate):
-                    result_json = cyclos.addPro(v["adh_id"], unaccented_string, v["email"], addresses)
-                    result = json.loads(result_json)
-                    if "user" in result:
-                        id = result["user"]["id"]
-                        cyclos.resetPassword(id)
-                        print (id)
+                #if (not simulate):
+                #    result_json = cyclos.addPro(v["adh_id"], unaccented_string, v["email"], addresses)
+                #    result = json.loads(result_json)
+                #    if "user" in result:
+                #        id = result["user"]["id"]
+                #        cyclos.resetPassword(id)
+                #        print (id)
             else:
                 #print("COMPARE")
                 changed = False
@@ -135,12 +148,30 @@ def getChangesAdhPros(connection, cyclos, force, simulate):
     with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json', 'w') as outfile:
         json.dump(changesDB, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
-def applyChangesAdhPros(connection, cyclos, force, simulate):
+def applyChangesAdhPros(connection, cyclos):
     with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json') as data_file:
         datas = json.load(data_file)
         for k, v in datas.items():
-            print(k)
-            print(v)
+            for changes in v:
+                if (changes['dbtochange'] == "cyclos"):
+                    if (changes['type'] == "delete"):
+                        print("delete "+k)
+                        id = cyclos.getIdFromEmail(k)
+                        cyclos.disableUser(id)
+                    if (changes['type'] == "modify"):
+                        print("modify "+k)
+                        #id = cyclos.getIdFromEmail(k)
+                        #data={changes['field']: changes['newvalue']}
+                        data={"name": changes['newvalue'], "username": k, "email": k}
+                        cyclos.putUser(k, data)
+                    if (changes['type'] == "create"):
+                        print("create "+k)
+                        infos = changes['infos']
+                        result_json = cyclos.addPro(infos['adh_id'], infos['name'], infos['email'], infos['addresses'])
+                        print (result_json)
+            #break
+            #print(k)
+            #print(v)
 
 
 def getUserSQL():
@@ -173,16 +204,16 @@ def getUsersCyclos(cyclos, group):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-force", help="force la synchronisation",
+    parser.add_argument("-apply", help="applique la synchronisation précédément simulée",
         action="store_true")
     #parser.add_argument("-days", help="efface les messages plus vieux que le nombre de jours precises", type=int)
     parser.add_argument("-simulate", help="simule et affiche la liste des informations qui seront modifées",
         action="store_true")
     args = parser.parse_args()
-    if args.force:
-        force = True
+    if args.apply:
+        apply = True
     else:
-        force = False
+        apply = False
     if args.simulate:
         simulate = True
     else:
@@ -190,6 +221,6 @@ if __name__ == '__main__':
     connection = connect()
     cyclos = Cyclos()
     if (simulate):
-        getChangesAdhPros(connection, cyclos, force, simulate)
-    else:
-        applyChangesAdhPros(connection, cyclos, force, simulate)
+        getChangesAdhPros(connection, cyclos)
+    if (apply):
+        applyChangesAdhPros(connection, cyclos)
