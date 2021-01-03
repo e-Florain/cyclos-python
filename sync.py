@@ -8,6 +8,7 @@ import argparse
 from cyclos import Cyclos
 import re
 import os
+import time
 import unidecode
 import json
 import config as cfg
@@ -145,11 +146,12 @@ def getChangesAdhPros(connection, cyclos):
                 if (changed):
                     changesDB[k] = listchanges
     #print(changesDB)
-    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json', 'w') as outfile:
+    jsonfilename = time.strftime("%Y%m%d-%H%M%S")+'-changes.json'
+    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/'+jsonfilename, 'w') as outfile:
         json.dump(changesDB, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
 def applyChangesAdhPros(connection, cyclos):
-    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/changes.json') as data_file:
+    with open(os.path.dirname(os.path.abspath(__file__)) +'/json/'+jsonfile) as data_file:
         datas = json.load(data_file)
         for k, v in datas.items():
             for changes in v:
@@ -204,14 +206,16 @@ def getUsersCyclos(cyclos, group):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-apply", help="applique la synchronisation précédément simulée",
+    parser.add_argument("-apply", help="applique la synchronisation du json fournie en parametre",
         action="store_true")
+    parser.add_argument("jsonfile", type=str, help="fichier json")
     #parser.add_argument("-days", help="efface les messages plus vieux que le nombre de jours precises", type=int)
     parser.add_argument("-simulate", help="simule et affiche la liste des informations qui seront modifées",
         action="store_true")
     args = parser.parse_args()
     if args.apply:
         apply = True
+        jsonfile = args.jsonfile
     else:
         apply = False
     if args.simulate:
