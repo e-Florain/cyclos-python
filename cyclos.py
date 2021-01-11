@@ -81,7 +81,7 @@ class Cyclos:
     def addUser(self, username, name, email):
         cyclosLogger.info(LOG_HEADER + '[-] '+'addUser/'+username+'/'+email+'/'+name)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'username': username, 'name': name, 'email': email, 'group': 'MBN_Particuliers', "passwords": [
+        data = {'username': username, 'name': name, 'email': email, 'group': 'Particuliers', "passwords": [
             {
             "type": "login",
             "value": "azerty",
