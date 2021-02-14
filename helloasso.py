@@ -29,6 +29,7 @@ class HelloAsso:
         requests.packages.urllib3.disable_warnings()
         self.user = cfg.ha['user']
         self.password = cfg.ha['password']
+        self.debug = cfg.ha['debug']
         requests.packages.urllib3.disable_warnings()
         self.getToken()
 
@@ -62,7 +63,7 @@ class HelloAsso:
         #headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+token}
         #resp = requests.get(url, params=params, headers=headers)
         now = datetime.now()
-        last_hour_date_time = datetime.now() - timedelta(days = 30)
+        last_hour_date_time = datetime.now() - timedelta(days = 60)
         #url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         url = 'https://api.helloasso.com/v5/organizations/le-florain/payments'+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         params = {}
@@ -78,13 +79,14 @@ class HelloAsso:
             if (str(data['id']) not in listtransactions):
                 if ((data['order']['formSlug'] == 'change-florain-numerique-credit-unitaire') or
                     (data['order']['formSlug'] == 'test-change-florain-numerique-credit-mensuel')):
-                    for item in data['items']:
-                        amount = item['amount']
+                    #for item in data['items']:
+                    #    amount = item['amount']
+                    amount = data['amount']
                     accountID = cyclos.getIdFromEmail(data['payer']['email'])
                     amountCyclos = amount/100
                     if (accountID != False):
-                        #print amountCyclos
-                        res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                        if (data['state'] == "Authorized"):
+                            res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
 		   #res = {}
                     #res['transactionNumber']="XXX"
                         if ('transactionNumber' in res):
@@ -95,6 +97,8 @@ class HelloAsso:
                                 'transactionCyclos' : res['transactionNumber'],
                                 'formulaire': data['order']['formSlug'],
                                 'email': data['payer']['email'],
+                                'state': data['state'],
+                                'paymentMeans': data['paymentMeans'],
                                 'amount': amountCyclos
                             }
                         else:
@@ -105,6 +109,8 @@ class HelloAsso:
                                 'transactionCyclos' : 'None',
                                 'formulaire': data['order']['formSlug'],
                                 'email': data['payer']['email'],
+                                'state': data['state'],
+                                'paymentMeans': data['paymentMeans'],
                                 'amount': amountCyclos
                             }
                     else:
@@ -115,6 +121,8 @@ class HelloAsso:
                             'formulaire': data['order']['formSlug'],
                             'email': data['payer']['email'],
                             'amount': amountCyclos,
+                            'state': data['state'],
+                            'paymentMeans': data['paymentMeans'],
                             'error': 'email not found'
                         }
                     listtransactions[data['id']] = tmp
