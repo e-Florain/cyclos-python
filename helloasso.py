@@ -63,9 +63,9 @@ class HelloAsso:
         #headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+token}
         #resp = requests.get(url, params=params, headers=headers)
         now = datetime.now()
-        last_hour_date_time = datetime.now() - timedelta(days = 60)
+        last_hour_date_time = datetime.now() - timedelta(days = 30)
         #url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
-        url = 'https://api.helloasso.com/v5/organizations/le-florain/payments'+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
+        url = 'https://api.helloasso.com/v5/organizations/le-florain/payments'+'?pageSize=1000&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         params = {}
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.token}
         resp = requests.get(url, params=params, headers=headers)
