@@ -84,6 +84,7 @@ class HelloAsso:
                     amount = data['amount']
                     accountID = cyclos.getIdFromEmail(data['payer']['email'])
                     amountCyclos = amount/100
+                    res = {}
                     if (accountID != False):
                         if (data['state'] == "Authorized"):
                             res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))

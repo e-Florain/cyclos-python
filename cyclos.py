@@ -146,7 +146,7 @@ class Cyclos:
         self.displayJson(resp.text)
 
     def setPaymentSystemtoUser(self, email, amount, description):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+email+'/'+amout+'/'+description)
+        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+email+'/'+str(amount)+'/'+description)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         id = self.getIdFromEmail(email)
         data = {'amount': amount, 'subject': id, 'type': 'MBNNEF.NEFtransferuser', 'description': description}      
