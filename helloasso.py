@@ -25,11 +25,12 @@ paiementLogger.addHandler(fileHandler)
 
 class HelloAsso:
 
-    def __init__(self):
+    def __init__(self, simulate=False):
         requests.packages.urllib3.disable_warnings()
         self.user = cfg.ha['user']
         self.password = cfg.ha['password']
         self.debug = cfg.ha['debug']
+        self.simulate = simulate
         requests.packages.urllib3.disable_warnings()
         self.getToken()
 
@@ -63,7 +64,7 @@ class HelloAsso:
         #headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+token}
         #resp = requests.get(url, params=params, headers=headers)
         now = datetime.now()
-        last_hour_date_time = datetime.now() - timedelta(days = 30)
+        last_hour_date_time = datetime.now() - timedelta(days = 90)
         #url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         url = 'https://api.helloasso.com/v5/organizations/le-florain/payments'+'?pageSize=1000&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         params = {}
@@ -87,15 +88,23 @@ class HelloAsso:
                     res = {}
                     if (accountID != False):
                         if (data['state'] == "Authorized"):
-                            res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                            paiementLogger.info('')
+                            msglog = LOG_HEADER + '[-] '
+                            if (self.simulate):
+                                msglog += 'SIMULATE'
+                            paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amountCyclos)+' helloassoid:'+str(data['order']['id']))
+                            if (not self.simulate):     
+                                res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                                res_object = json.loads(res.text)
+                                #print(res_object['transactionNumber'])
 		   #res = {}
                     #res['transactionNumber']="XXX"
-                        if ('transactionNumber' in res):
+                        if ('transactionNumber' in res_object):
                             tmp = {
                                 'date': data['date'],
                                 'orderdate': data['order']['date'],
                                 'orderid': data['order']['id'],
-                                'transactionCyclos' : res['transactionNumber'],
+                                'transactionCyclos' : res_object['transactionNumber'],
                                 'formulaire': data['order']['formSlug'],
                                 'email': data['payer']['email'],
                                 'state': data['state'],
@@ -103,6 +112,7 @@ class HelloAsso:
                                 'amount': amountCyclos
                             }
                         else:
+                            paiementLogger.error(LOG_HEADER + '[-] '+(res.text).encode('utf-8'))
                             tmp = {
                                 'date': data['date'],
                                 'orderdate': data['order']['date'],

@@ -25,6 +25,7 @@ class Cyclos:
         self.url = cfg.cyclos['url']
         self.user = cfg.cyclos['user']
         self.password = cfg.cyclos['password']
+        self.debug = cfg.cyclos['debug']
         self.grpPro = "MBN_Pros"
         requests.packages.urllib3.disable_warnings()
        
@@ -145,15 +146,16 @@ class Cyclos:
         resp = requests.get(self.url+'/'+user+'/passwords', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         self.displayJson(resp.text)
 
-    def setPaymentSystemtoUser(self, email, amount, description):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+email+'/'+str(amount)+'/'+description)
+    def setPaymentSystemtoUser(self, accountID, amount, description):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+accountID+'/'+str(amount)+'/'+description)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        id = self.getIdFromEmail(email)
-        data = {'amount': amount, 'subject': id, 'type': 'MBNNEF.NEFtransferuser', 'description': description}      
+        #id = self.getIdFromEmail(email)
+        data = {'amount': amount, 'subject': accountID, 'type': 'MBNNEF.NEFtransferuser', 'description': description}      
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        #cyclosLogger.debug(LOG_HEADER+self.formatJson(resp.text))
         #self.displayJson(resp.text)
-        return json.loads(resp.text)
+        return resp
 
     def getPayments(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getPayments/'+user)
@@ -194,6 +196,11 @@ class Cyclos:
         json_object = json.loads(json_text)
         json_formatted_str = json.dumps(json_object, indent=2)
         print(json_formatted_str)
+
+    def formatJson(self, json_text):
+        json_object = json.loads(json_text)
+        json_formatted_str = json.dumps(json_object, indent=2)
+        return json_formatted_str
 
     def resetPassword(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'resetPassword/'+user)
