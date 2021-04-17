@@ -98,7 +98,7 @@ class Cyclos:
         return resp.text
 
     def addPro(self, adh_id, name, email, addresses):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+adh_id+'/'+name+'/'+email+'/'+str(addresses))
+        cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+str(adh_id)+'/'+name+'/'+email+'/'+str(addresses))
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {"username": email, "name": name, "email": email, "group": "MBN_Pros", "passwords": [
             {
