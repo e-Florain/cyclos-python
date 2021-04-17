@@ -232,7 +232,7 @@ def applyChangesAdhPros(connection, cyclos):
                         print("modify "+k)
                         #id = cyclos.getIdFromEmail(k)
                         #data={changes['field']: changes['newvalue']}
-                        data={"name": changes['newvalue'], "username": k, "email": k}
+                        data={"name": changes['newvalue'], "username": k, "email": k, "hiddenFields": "", "customValues": {}}
                         cyclos.putUser(k, data)
                     if (changes['type'] == "create"):
                         print("create "+k)
@@ -272,7 +272,7 @@ def getUserSQL(type):
     try:
         with connection.cursor() as cursor:
             # Create a new record
-            sql = "SELECT * from "+type
+            sql = "SELECT * from "+type+" where deleted=0 and cyclos_account=1"
             cursor.execute(sql)
             results = cursor.fetchall()
             #print(results)
