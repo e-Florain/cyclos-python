@@ -124,6 +124,18 @@ class HelloAsso:
                                         'paymentMeans': data['paymentMeans'],
                                         'amount': amountCyclos
                                     }
+                        else:
+                            tmp = {
+                                'date': data['date'],
+                                'orderdate': data['order']['date'],
+                                'orderid': data['order']['id'],
+                                'formulaire': data['order']['formSlug'],
+                                'email': data['payer']['email'],
+                                'amount': amountCyclos,
+                                'state': data['state'],
+                                'paymentMeans': data['paymentMeans'],
+                                'error': 'paiement not Authorized'
+                            }
                     else:
                         tmp = {
                             'date': data['date'],
