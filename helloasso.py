@@ -99,31 +99,31 @@ class HelloAsso:
                                 #print(res_object['transactionNumber'])
 		   #res = {}
                     #res['transactionNumber']="XXX"
-                        if ('transactionNumber' in res_object):
-                            tmp = {
-                                'date': data['date'],
-                                'orderdate': data['order']['date'],
-                                'orderid': data['order']['id'],
-                                'transactionCyclos' : res_object['transactionNumber'],
-                                'formulaire': data['order']['formSlug'],
-                                'email': data['payer']['email'],
-                                'state': data['state'],
-                                'paymentMeans': data['paymentMeans'],
-                                'amount': amountCyclos
-                            }
-                        else:
-                            paiementLogger.error(LOG_HEADER + '[-] '+(res.text).encode('utf-8'))
-                            tmp = {
-                                'date': data['date'],
-                                'orderdate': data['order']['date'],
-                                'orderid': data['order']['id'],
-                                'transactionCyclos' : 'None',
-                                'formulaire': data['order']['formSlug'],
-                                'email': data['payer']['email'],
-                                'state': data['state'],
-                                'paymentMeans': data['paymentMeans'],
-                                'amount': amountCyclos
-                            }
+                                if ('transactionNumber' in res_object):
+                                    tmp = {
+                                        'date': data['date'],
+                                        'orderdate': data['order']['date'],
+                                        'orderid': data['order']['id'],
+                                        'transactionCyclos' : res_object['transactionNumber'],
+                                        'formulaire': data['order']['formSlug'],
+                                        'email': data['payer']['email'],
+                                        'state': data['state'],
+                                        'paymentMeans': data['paymentMeans'],
+                                        'amount': amountCyclos
+                                    }
+                                else:
+                                    paiementLogger.error(LOG_HEADER + '[-] '+(res.text).encode('utf-8'))
+                                    tmp = {
+                                        'date': data['date'],
+                                        'orderdate': data['order']['date'],
+                                        'orderid': data['order']['id'],
+                                        'transactionCyclos' : 'None',
+                                        'formulaire': data['order']['formSlug'],
+                                        'email': data['payer']['email'],
+                                        'state': data['state'],
+                                        'paymentMeans': data['paymentMeans'],
+                                        'amount': amountCyclos
+                                    }
                     else:
                         tmp = {
                             'date': data['date'],
