@@ -39,7 +39,7 @@ class Cyclos:
         cyclosLogger.info(LOG_HEADER + '[-] '+'getAdhPro/'+email)
         users = self.getUsers(self.grpPro)
         for user in users:
-            if (user['shortDisplay'] == email):
+            if (user['email'] == email):
                 return self.getUser(user['id'])
 
     def putUser(self, email, data):
@@ -74,7 +74,7 @@ class Cyclos:
         cyclosLogger.info(LOG_HEADER + '[-] '+'getIdFromEmail/'+email)
         users = self.getAllUsers()
         for user in users:
-            userdetails = self.getUser(user['shortDisplay'])
+            userdetails = self.getUser(user['email'])
             if (userdetails['email'].lower() == email.lower()):
                 return user['id']
         return False
@@ -82,12 +82,12 @@ class Cyclos:
     def addUser(self, username, name, email):
         cyclosLogger.info(LOG_HEADER + '[-] '+'addUser/'+username+'/'+email+'/'+name)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {'username': username, 'name': name, 'email': email, 'group': 'Particuliers', "passwords": [
+        data = {'username': username, 'name': name, 'email': email, 'group': 'particuliers', "passwords": [
             {
             "type": "login",
-            "value": "azerty",
+            "value": "Azerty1234",
             "checkConfirmation": True,
-            "confirmationValue": "azerty",
+            "confirmationValue": "Azerty1234",
             "forceChange": False
             }
         ],
@@ -100,19 +100,19 @@ class Cyclos:
     def addPro(self, adh_id, name, email, addresses):
         cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+str(adh_id)+'/'+name+'/'+email+'/'+str(addresses))
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        data = {"username": email, "name": name, "email": email, "group": "MBN_Pros", "passwords": [
+        data = {"username": email, "name": name, "email": email, "group": "professionnels", "passwords": [
             {
             "type": "login",
-            "value": "1234",
+            "value": "Azerty1234",
             "checkConfirmation": True,
-            "confirmationValue": "1234",
+            "confirmationValue": "Azerty1234",
             "forceChange": True
             }
         ],
         "customValues":
             { 
-            "Autorisation_eflorain_pro": "oui_eflorain_pro",
-            "Autorisation_eflorain_part": "oui_eflorain_part",
+            #"Autorisation_eflorain_pro": "oui_eflorain_pro",
+            #"Autorisation_eflorain_part": "oui_eflorain_part",
             "Num_adherent_pro": adh_id
         },
         "skipActivationEmail": True,
