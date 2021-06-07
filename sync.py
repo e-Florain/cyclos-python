@@ -15,8 +15,8 @@ import unidecode
 import json
 import config as cfg
 
-cyclosgrppro = "MBN_Pros"
-cyclosgrppart = "Particuliers"
+cyclosgrppro = "professionnels"
+cyclosgrppart = "particuliers"
 
 LOG_HEADER = " [" + __file__ + "] - "
 LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + '/log/'
@@ -288,9 +288,10 @@ def getUsersCyclos(cyclos, group):
     cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersCyclos')
     listusers=dict()
     users = cyclos.getUsers(group)
+    print(users)
     for user in users:
         userinfo = cyclos.getUser(user['id'])
-        listusers[user['shortDisplay']] = userinfo
+        listusers[user['email']] = userinfo
     return listusers
 
 if __name__ == '__main__':
