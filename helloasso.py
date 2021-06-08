@@ -66,11 +66,21 @@ class HelloAsso:
         now = datetime.now()
         last_hour_date_time = datetime.now() - timedelta(days = 90)
         #url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
-        url = 'https://api.helloasso.com/v5/organizations/le-florain/payments'+'?pageSize=1000&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
+        url = cfg.ha['url']+'/payments'+'?pageSize=1000&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         params = {}
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.token}
-        resp = requests.get(url, params=params, headers=headers)
-        #self.displayJson(resp.text)
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != "200"):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 HelloAsso')
+            exit
         result = json.loads(resp.text)
         for data in result['data']:
             #print data['order']['id']
@@ -95,6 +105,7 @@ class HelloAsso:
                             paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amountCyclos)+' helloassoid:'+str(data['order']['id']))
                             if (not self.simulate):     
                                 res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                                #print(res)
                                 res_object = json.loads(res.text)
                                 #print(res_object['transactionNumber'])
 		   #res = {}
@@ -112,7 +123,10 @@ class HelloAsso:
                                         'amount': amountCyclos
                                     }
                                 else:
-                                    paiementLogger.error(LOG_HEADER + '[-] '+(res.text).encode('utf-8'))
+                                    if ('text' in res):
+                                        paiementLogger.error(LOG_HEADER + '[-] '+(res.text).encode('utf-8'))
+                                    else:
+                                        paiementLogger.error(LOG_HEADER + '[-] '+str(res))
                                     tmp = {
                                         'date': data['date'],
                                         'orderdate': data['order']['date'],

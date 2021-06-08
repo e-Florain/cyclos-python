@@ -150,11 +150,11 @@ class Cyclos:
         cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+accountID+'/'+str(amount)+'/'+description)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         #id = self.getIdFromEmail(email)
-        data = {'amount': amount, 'subject': accountID, 'type': 'MBNNEF.NEFtransferuser', 'description': description}      
+        data = {'amount': amount, 'subject': accountID, 'type': 'debit.toUser', 'description': description}      
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         #cyclosLogger.debug(LOG_HEADER+self.formatJson(resp.text))
-        #self.displayJson(resp.text)
+        self.displayJson(resp.text)
         return resp
 
     def getPayments(self, user):
