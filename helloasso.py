@@ -82,6 +82,9 @@ class HelloAsso:
             paiementLogger.error(LOG_HEADER + '[-] status not 200 HelloAsso')
             exit
         result = json.loads(resp.text)
+        if 'data' not in result:
+            print (result)
+            exit
         for data in result['data']:
             #print data['order']['id']
             #print listtransactions
