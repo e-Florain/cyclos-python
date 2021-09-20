@@ -39,7 +39,7 @@ def hello_world():
 def paiement():
     data = request.form.to_dict()
     #print(data, request, type(request))
-
+    ha.getToken()
     webLogger.info(LOG_HEADER + '[/paiement] GET')
     ha.setTransactionstoCyclos()
     return "200 - OK"
