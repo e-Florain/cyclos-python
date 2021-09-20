@@ -54,7 +54,7 @@ class HelloAsso:
 
     def setTransactionstoCyclos(self):
         cyclos = Cyclos()
-        with open(cfg.ha['transactions']) as data_file:
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.ha['transactions']) as data_file:
             listtransactions = json.load(data_file)
         now = datetime.now()
         last_hour_date_time = datetime.now() - timedelta(days = 2)
