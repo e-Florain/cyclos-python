@@ -66,7 +66,7 @@ class HelloAsso:
         now = datetime.now()
         last_hour_date_time = datetime.now() - timedelta(days = 90)
         #url = cfg.ha['url']+'?from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
-        url = cfg.ha['url']+'/payments'+'?pageSize=1000&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
+        url = cfg.ha['url']+'/payments'+'?pageSize=100&from='+last_hour_date_time.strftime("%Y-%m-%dT%H:%M:%S")
         params = {}
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.token}
         try:
