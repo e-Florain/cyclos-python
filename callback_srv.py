@@ -35,12 +35,12 @@ def hello_world():
     ha.setTransactionstoCyclos()
     return 'Check Paiments - 200 - OK'
 
-@app.route('/paiement')
+@app.route('/paiement', methods=['POST'])
 def paiement():
     data = request.form.to_dict()
     #print(data, request, type(request))
     ha.getToken()
-    webLogger.info(LOG_HEADER + '[/paiement] GET')
+    webLogger.info(LOG_HEADER + '[/paiement] POST')
     ha.setTransactionstoCyclos()
     return "200 - OK"
 
