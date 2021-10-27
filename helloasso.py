@@ -105,9 +105,9 @@ class HelloAsso:
                             msglog = LOG_HEADER + '[-] '
                             if (self.simulate):
                                 msglog += 'SIMULATE'
-                            paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amountCyclos)+' helloassoid:'+str(data['order']['id']))
+                            paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amountCyclos)+' helloassoid:'+str(data['id'])+" Order : "+str(data['order']['id']))
                             if (not self.simulate):     
-                                res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['order']['id']))
+                                res = cyclos.setPaymentSystemtoUser(accountID, amountCyclos,"Transaction via HelloAsso Id : "+str(data['id'])+" Order : "+str(data['order']['id']))
                                 #print(res)
                                 res_object = json.loads(res.text)
                                 #print(res_object['transactionNumber'])
@@ -168,5 +168,5 @@ class HelloAsso:
                     listtransactions[data['id']] = tmp
             print ("")
         #print listtransactions
-        with open(cfg.ha['transactions'], 'w') as outfile:
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.ha['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
