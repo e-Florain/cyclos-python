@@ -26,13 +26,25 @@ class Cyclos:
         self.user = cfg.cyclos['user']
         self.password = cfg.cyclos['password']
         self.debug = cfg.cyclos['debug']
-        self.grpPro = "MBN_Pros"
+        self.grpPro = "professionnels"
         requests.packages.urllib3.disable_warnings()
-       
+    
+    def getAuth(self):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'auth')
+        resp = requests.get(self.url+'/auth', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        auth = json.loads(resp.text)
+        if (auth["user"]["shortDisplay"] == "adminAPI"):
+            return True
+        else:
+            return False
+
     def getUser(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getUser/'+user)
         resp = requests.get(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        #self.displayJson(resp.text)    
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         return json.loads(resp.text)
 
     def getAdhPro(self, email):
@@ -47,18 +59,22 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         id = self.getIdFromEmail(email)
         resp = requests.put(self.url+'/users/'+id, auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        #print(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         self.displayJson(resp.text)
 
     def getAllUsers(self):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'getAllUsers')
+        cyclosLogger.info(LOG_HEADER + 'getAllUsers')
         resp = requests.get(self.url+'/users?pageSize=10000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        #self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         return json.loads(resp.text)
 
     def getUsers(self, group):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'getUsers/'+group)
+        cyclosLogger.info(LOG_HEADER + 'getUsers/'+group)
         resp = requests.get(self.url+'/users?groups='+group+'&pageSize=10000&statuses=active', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         #self.displayJson(resp.text)
         return json.loads(resp.text)
 
@@ -94,7 +110,8 @@ class Cyclos:
         "skipActivationEmail": True
         }
         resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         return resp.text
 
     def addPro(self, adh_id, name, email, addresses):
@@ -120,31 +137,35 @@ class Cyclos:
         "addresses": addresses
         }
         resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         return resp.text
 
     def getUserStatus(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getUserStatus/'+user)
         resp = requests.get(self.url+'/'+user+'/status', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def disableUser(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'disableUser/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {"status": "disabled"}
         resp = requests.post(self.url+'/'+user+'/status', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp.text)
-        #self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def delUser(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'delUser/'+user)
         resp = requests.delete(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def getPasswords(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getPasswords/'+user)
         resp = requests.get(self.url+'/'+user+'/passwords', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def setPaymentSystemtoUser(self, accountID, amount, description):
         cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+accountID+'/'+str(amount)+'/'+description)
@@ -154,42 +175,44 @@ class Cyclos:
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         #cyclosLogger.debug(LOG_HEADER+self.formatJson(resp.text))
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
         return resp
 
     def getPayments(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getPayments/'+user)
         resp = requests.get(self.url+'/'+user+'/payments/data-for-perform', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def getAddresses(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getAddresses/'+user)
         resp = requests.get(self.url+'/'+user+'/addresses', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
 
     def createAddress(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'createAddress/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'name': 'Default', 'zip': '54200', 'city': 'Royaumeix', 'country': 'FR', 'defaultaddress': True, 'street': '10B rue d\'Alsace'}
-        print(data)
         resp = requests.post(self.url+'/'+user+'/addresses', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def setPaymentUsertoPro(self, user, pro, amount, description):
         cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentUsertoPro/'+user+'/'+pro+'/'+amount+'/'+description)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'amount': amount, 'subject': pro, 'type': 'MBNPart.transfertUsertoPro', 'description': description}
-        print(data)
         resp = requests.post(self.url+'/'+user+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def getTransfers(self):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getTransfers')
         resp = requests.get(self.url+'/transfers', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def displayJson(self, json_text):
         #cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+email+'/'+data)
@@ -207,8 +230,8 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'w': 'email'}
         resp = requests.post(self.url+'/'+user+'/passwords/login/reset-and-send', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        #self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def changePassword(self, user, oldpassword, newpassword):
         cyclosLogger.info(LOG_HEADER + '[-] '+'changePassword/'+user)
@@ -216,34 +239,35 @@ class Cyclos:
         data = {'oldPassword': oldpassword, 'newPassword': newpassword, 'checkConfirmation': True, 'newPasswordConfirmation': newpassword, 'forceChange': True}
         print(data)
         resp = requests.post(self.url+'/'+user+'/passwords/login/change', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        #self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def enablePassword(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/enable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def disablePassword(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/disable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def generatePassword(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/allow-generation', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        print(resp)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def getPasswords(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
         resp = requests.get(self.url+'/'+user+'/passwords/login', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        self.displayJson(resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
