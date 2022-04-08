@@ -1,14 +1,18 @@
 import csv
+import json
 import psycopg2
 import config as cfg
 
-def parsePart():
+def parsePart(statusmembership="active"):
     results=[]
-    with open('AdhFlorain_Part2.csv', newline='') as csvfile:
+    assos = loadAssos()
+    with open('AdhFlorain_Part3.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
+        i=0
         for row in reader:
-            if not row[14]=='MONTANT':
-                temp={}
+            #print(i)
+            temp={}
+            if (statusmembership == "active"):
                 if ((row[4] != "") and (row[4] != "X") and (row[3] != "")):
                     temp['Référence interne'] = row[0]
                     temp['Nom'] = row[4]
@@ -16,10 +20,27 @@ def parsePart():
                     temp['Téléphone'] = row[8].replace('.', '')
                     temp['Courriel'] = row[7]
                     temp['Membre libre'] = "Non"
-                    temp['Asso'] = row[9]
-                    temp['Montant'] = row[14]
-                    #print(temp)
+                    if (row[9] == "31"):
+                        row[9] = "0"
+                    if (row[9] == ""):
+                        row[9] = "0"
+                    temp['Asso'] = assos[row[9]]
                     results.append(temp)
+            else:
+                if ((row[4] != "") and (row[4] != "X") and (row[3] == "")):
+                    temp['Référence interne'] = row[0]
+                    temp['Nom'] = row[4]
+                    temp['Prénom'] = row[5]
+                    temp['Téléphone'] = row[8].replace('.', '')
+                    temp['Courriel'] = row[7]
+                    temp['Membre libre'] = "Non"
+                    if (row[9] == "31"):
+                        row[9] = "0"
+                    if (row[9] == ""):
+                        row[9] = "0"
+                    temp['Asso'] = assos[row[9]]
+                    results.append(temp)
+            i+=1
     #for result in results:
     #    if (len(result) > 0):
     #        print(result)
@@ -40,28 +61,46 @@ def exportResults(results, filename):
             if (len(result) > 0):
                 f.write("\n")
 
-def parsePro():
+def parsePro(statusmembership="active"):
     results=[]
-    with open('AdhFlorain_Pro2.csv', newline='') as csvfile:
+    with open('AdhFlorain_Pro3.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in reader:
             temp={}
-            if ((row[5] != "") and (row[5] != "X") and (row[4] != "")):
-                temp['Nom'] = row[5]
-                temp['Rue'] = row[8].replace(',', '');
-                temp['Code postal'] = row[9]
-                temp['Ville'] = row[10]
-                temp['Téléphone'] = row[11]
-                temp['Courriel'] = row[12]
-                temp['Membre libre'] = "Non"
-                temp['Notes'] = row[7]
-                temp['Est une entreprise'] = "1"
-                if (row[13] == "association"):
-                    temp['Est une association'] = "1"
-                else:
-                    temp['Est une association'] = "0"
-                #print(temp)
-                results.append(temp)
+            if (statusmembership == "active"):
+                if ((row[5] != "") and (row[5] != "X") and (row[4] != "")):
+                    temp['Nom'] = row[5]
+                    temp['Notes'] = row[8]
+                    temp['Rue'] = row[9].replace(',', '');
+                    temp['Code postal'] = row[10]
+                    temp['Ville'] = row[11]
+                    temp['Téléphone'] = row[12]
+                    temp['Courriel'] = row[13]
+                    temp['Membre libre'] = "Non"   
+                    temp['Est une entreprise'] = "1"
+                    if (row[13] == "association"):
+                        temp['Est une association'] = "1"
+                    else:
+                        temp['Est une association'] = "0"
+                    #print(temp)
+                    results.append(temp)
+            else:
+                if ((row[5] != "") and (row[5] != "X") and (row[4] == "")):
+                    temp['Nom'] = row[5]
+                    temp['Notes'] = row[8]
+                    temp['Rue'] = row[9].replace(',', '');
+                    temp['Code postal'] = row[10]
+                    temp['Ville'] = row[11]
+                    temp['Téléphone'] = row[12]
+                    temp['Courriel'] = row[13]
+                    temp['Membre libre'] = "Non"
+                    temp['Est une entreprise'] = "1"
+                    if (row[13] == "association"):
+                        temp['Est une association'] = "1"
+                    else:
+                        temp['Est une association'] = "0"
+                    #print(temp)
+                    results.append(temp)
     return results
 
 def getOdooAdhs():
@@ -105,6 +144,13 @@ def parseOdooAdhs():
     #print (results)
     return results
 
+def loadAssos():
+    with open("associations.json") as data_file:
+        data = json.load(data_file)
+        #print(data)
+        return data
+
+
 """ def updateOdooAdhsMemberships(adhsodoo, adhscsv):
     connection = connect()
     for adhcsv in adhscsv:
@@ -143,11 +189,14 @@ def parseOdooAdhs():
                 #cursor.execute(sql) """
 
 if __name__ == '__main__':
-    adhscsv = parsePart()
-    adhspro = parsePro()
-    #print(adhscsv)
+    adhscsv = parsePart("active")
+    exportResults(adhscsv, "eggs2022.csv")
+    adhscsv = parsePart("false")
+    exportResults(adhscsv, "eggs.csv")
+    adhspro = parsePro("active")
+    exportResults(adhspro, "eggspros2022.csv")
+    adhspro = parsePro("false")
     exportResults(adhspro, "eggspros.csv")
-    
     
     #adhsodoo = parseOdooAdhs()
     #updateOdooAdhsMemberships(adhsodoo, adhscsv)
