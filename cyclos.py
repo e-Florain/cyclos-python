@@ -81,7 +81,7 @@ class Cyclos:
 
     def getUsers(self, group):
         cyclosLogger.info(LOG_HEADER + 'getUsers/'+group)
-        resp = requests.get(self.url+'/users?groups='+group+'&pageSize=10000&statuses=active', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        resp = requests.get(self.url+'/users?groups='+group+'&pageSize=10000&statuses=active&statuses=active&statuses=blocked&statuses=pending', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         if (resp.status_code != "200"):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
@@ -127,8 +127,8 @@ class Cyclos:
             cyclosLogger.error(LOG_HEADER + email + " " + resp.text)
         return resp.text
 
-    def addPro(self, adh_id, name, email, addresses):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+str(adh_id)+'/'+name+'/'+email+'/'+str(addresses))
+    def addPro(self, name, email, addresses):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+name+'/'+email+'/'+str(addresses))
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {"username": email, "name": name, "email": email, "group": "professionnels", "passwords": [
             {
@@ -143,7 +143,7 @@ class Cyclos:
             { 
             #"Autorisation_eflorain_pro": "oui_eflorain_pro",
             #"Autorisation_eflorain_part": "oui_eflorain_part",
-            "Num_adherent_pro": adh_id
+            #"Num_adherent_pro": adh_id
         },
         "skipActivationEmail": True,
         "acceptAgreement": True,
