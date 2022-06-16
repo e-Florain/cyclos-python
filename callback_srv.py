@@ -13,6 +13,7 @@ from flask import request
 import time, signal
 from cherrypy import wsgiserver
 from helloasso import HelloAsso
+from filelock import FileLock
 
 LOG_HEADER = " [" + __file__ + "] - "
 p = re.compile("\w+(\d)")
@@ -32,17 +33,18 @@ ha = HelloAsso()
 @app.route('/')
 def hello_world():
     webLogger.info(LOG_HEADER + '[/] GET')
-    ha.setTransactionstoCyclos()
+    #ha.setTransactionstoCyclos()
     return 'Check Paiments - 200 - OK'
 
 @app.route('/paiement', methods=['POST'])
 def paiement():
     data = request.form.to_dict()
     #print(data, request, type(request))
-    ha.getToken()
-    webLogger.info(LOG_HEADER + '[/paiement] POST')
-    ha.setTransactionstoCyclos()
-    return "200 - OK"
+    with FileLock("myfile.txt"):
+        ha.getToken()
+        webLogger.info(LOG_HEADER + '[/paiement] POST')
+        ha.setTransactionstoCyclos()
+        return "200 - OK"
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 80), d)
