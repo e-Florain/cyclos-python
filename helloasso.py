@@ -15,10 +15,10 @@ from cyclos import Cyclos
 LOG_HEADER = " [" + __file__ + "] - "
 LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + '/log/'
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-paiementLogger = logging.getLogger('paiement')
+paiementLogger = logging.getLogger('helloasso')
 paiementLogger.setLevel(logging.DEBUG)
 paiementLogger.propagate = False
-fileHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'paiement'), maxBytes=2000000,
+fileHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'helloasso'), maxBytes=2000000,
                                   backupCount=1500)
 fileHandler.setFormatter(logFormatter)
 paiementLogger.addHandler(fileHandler)

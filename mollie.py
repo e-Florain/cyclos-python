@@ -57,7 +57,47 @@ class Mollie:
             exit
         result = json.loads(resp.text)
         return result['_embedded']['payments']
-        
+
+    def get_users(self):
+        headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
+        url = cfg.mollie['url']+'/customers'
+        params = {}
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != "200"):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+            exit
+        result = json.loads(resp.text)
+        self.display_json(result['_embedded']['customers'])
+        return result['_embedded']['customers']
+
+    def get_user(self, id):
+        headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
+        url = cfg.mollie['url']+'/customers/'+id
+        params = {}
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != "200"):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+            exit
+        result = json.loads(resp.text)
+        #self.display_json(result)
+        return result
+
     def setTransactionstoCyclos(self):
         listtransactions = self.get_old_payments()
         payments = self.get_payments()
@@ -80,6 +120,10 @@ class Mollie:
                     'method': payment['method'],
                     'amount': payment['amount']['value']
                 }
+                if 'customerId' in payment:
+                    infoscustomer = self.get_user(payment['customerId'])
+                    tmp['email'] = infoscustomer['email']
+                
                 listtransactions[payment['id']] = tmp
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
