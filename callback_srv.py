@@ -14,6 +14,7 @@ import time, signal
 from cherrypy import wsgiserver
 from helloasso import HelloAsso
 from filelock import FileLock
+from mollie import Mollie
 
 LOG_HEADER = " [" + __file__ + "] - "
 p = re.compile("\w+(\d)")
@@ -29,11 +30,13 @@ webLogger.addHandler(fileHandler)
 
 app = Flask(__name__)
 ha = HelloAsso()
+mo = Mollie()
 
 @app.route('/')
 def hello_world():
     webLogger.info(LOG_HEADER + '[/] GET')
     #ha.setTransactionstoCyclos()
+    mo.setTransactionstoCyclos()
     return 'Check Paiments - 200 - OK'
 
 @app.route('/paiement', methods=['POST'])
@@ -44,6 +47,7 @@ def paiement():
         ha.getToken()
         webLogger.info(LOG_HEADER + '[/paiement] POST')
         ha.setTransactionstoCyclos()
+        mo.setTransactionstoCyclos()
         return "200 - OK"
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
