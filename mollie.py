@@ -75,7 +75,7 @@ class Mollie:
             paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
             exit
         result = json.loads(resp.text)
-        self.display_json(result['_embedded']['customers'])
+        #self.display_json(result['_embedded']['customers'])
         return result['_embedded']['customers']
 
     def get_user(self, id):
@@ -102,29 +102,30 @@ class Mollie:
         listtransactions = self.get_old_payments()
         payments = self.get_payments()
         for payment in payments:
-            self.display_json(payment)
+            #self.display_json(payment)
             res = {}
             if (payment['id'] not in listtransactions):
-                print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
-                tmp = {
-                    'date': payment['paidAt'],
-                    'orderdate': payment['createdAt'],
-                    'orderid': payment['id'],
-                    #'transactionCyclos' : res_object['transactionNumber'],
-                    #'formulaire': data['order']['formSlug'],
-                    #'email': data['payer']['email'],
-                    #'client': payment['details']['consumerName'],
-                    'state': payment['status'],
-                    #'paymentMeans': data['paymentMeans'],
-                    'description': payment['description'],
-                    'method': payment['method'],
-                    'amount': payment['amount']['value']
-                }
-                if 'customerId' in payment:
-                    infoscustomer = self.get_user(payment['customerId'])
-                    tmp['email'] = infoscustomer['email']
-                
-                listtransactions[payment['id']] = tmp
+                if 'paidAt' in payment:
+                    #print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
+                    tmp = {
+                        'date': payment['paidAt'],
+                        'orderdate': payment['createdAt'],
+                        'orderid': payment['id'],
+                        #'transactionCyclos' : res_object['transactionNumber'],
+                        #'formulaire': data['order']['formSlug'],
+                        #'email': data['payer']['email'],
+                        #'client': payment['details']['consumerName'],
+                        'state': payment['status'],
+                        #'paymentMeans': data['paymentMeans'],
+                        'description': payment['description'],
+                        'method': payment['method'],
+                        'amount': payment['amount']['value']
+                    }
+                    if 'customerId' in payment:
+                        infoscustomer = self.get_user(payment['customerId'])
+                        tmp['email'] = infoscustomer['email']
+                    
+                    listtransactions[payment['id']] = tmp
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
