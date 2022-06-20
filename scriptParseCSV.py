@@ -63,6 +63,7 @@ def exportResults(results, filename):
 
 def parsePro(statusmembership="active"):
     results=[]
+    assos = loadAssos()
     with open('AdhFlorain_Pro3.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in reader:
@@ -78,10 +79,19 @@ def parsePro(statusmembership="active"):
                     temp['Courriel'] = row[13]
                     temp['Membre libre'] = "Non"   
                     temp['Est une entreprise'] = "1"
-                    if (row[13] == "association"):
+                    if (row[14] == "association"):
                         temp['Est une association'] = "1"
+                        found = False
+                        for key in assos:
+                            if (row[5] == assos[key]['name'].upper()):
+                                #print (assos[key]['description'])
+                                temp['detailed_activity'] = assos[key]['description']
+                                found = True
+                        if (found == False):
+                            temp['detailed_activity'] = ""
                     else:
                         temp['Est une association'] = "0"
+                        temp['detailed_activity'] = ""
                     #print(temp)
                     results.append(temp)
             else:
@@ -95,10 +105,18 @@ def parsePro(statusmembership="active"):
                     temp['Courriel'] = row[13]
                     temp['Membre libre'] = "Non"
                     temp['Est une entreprise'] = "1"
-                    if (row[13] == "association"):
+                    if (row[14] == "association"):
                         temp['Est une association'] = "1"
+                        found = False
+                        for key in assos:
+                            if (row[5] == assos[key]['name'].upper()):
+                                temp['detailed_activity'] = assos[key]['description']
+                                found = True
+                        if (found == False):
+                            temp['detailed_activity'] = ""
                     else:
                         temp['Est une association'] = "0"
+                        temp['detailed_activity'] = ""
                     #print(temp)
                     results.append(temp)
     return results
@@ -145,11 +163,30 @@ def parseOdooAdhs():
     return results
 
 def loadAssos():
-    with open("associations.json") as data_file:
+    #with open("associations.json") as data_file:
+    with open("assos.json") as data_file:
         data = json.load(data_file)
         #print(data)
         return data
 
+def convertAssos():
+    results={}
+    i=0
+    with open("assos.csv") as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in reader:
+            if (i!=0):
+                temp={}
+                temp['name'] = row[1]
+                temp['description'] = row[2]
+                results[row[0]]=temp
+            i=i+1
+        
+    #print(results)
+    with open('assos.json', 'w') as outfile:
+        json.dump(results, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+        #print(data)
+        #return data
 
 """ def updateOdooAdhsMemberships(adhsodoo, adhscsv):
     connection = connect()
@@ -189,14 +226,18 @@ def loadAssos():
                 #cursor.execute(sql) """
 
 if __name__ == '__main__':
-    adhscsv = parsePart("active")
-    exportResults(adhscsv, "eggs2022.csv")
-    adhscsv = parsePart("false")
-    exportResults(adhscsv, "eggs.csv")
+    #adhscsv = parsePart("active")
+    #exportResults(adhscsv, "eggs2022.csv")
+    #adhscsv = parsePart("false")
+    #exportResults(adhscsv, "eggs.csv")
     adhspro = parsePro("active")
     exportResults(adhspro, "eggspros2022.csv")
-    adhspro = parsePro("false")
-    exportResults(adhspro, "eggspros.csv")
+    #adhspro = parsePro("false")
+    #exportResults(adhspro, "eggspros.csv")
+    
     
     #adhsodoo = parseOdooAdhs()
     #updateOdooAdhsMemberships(adhsodoo, adhscsv)
+
+    #convertAssos()
+    #loadAssos()
