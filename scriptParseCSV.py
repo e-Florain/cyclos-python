@@ -6,7 +6,7 @@ import config as cfg
 def parsePart(statusmembership="active"):
     results=[]
     assos = loadAssos()
-    with open('AdhFlorain_Part3.csv', newline='') as csvfile:
+    with open('AdhPro_20220704.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         i=0
         for row in reader:
@@ -63,60 +63,65 @@ def exportResults(results, filename):
 
 def parsePro(statusmembership="active"):
     results=[]
-    assos = loadAssos()
-    with open('AdhFlorain_Pro3.csv', newline='') as csvfile:
+    #assos = loadAssos()
+    with open('AdhPro_20220704.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in reader:
             temp={}
             if (statusmembership == "active"):
                 if ((row[5] != "") and (row[5] != "X") and (row[4] != "")):
-                    temp['Nom'] = row[5]
-                    temp['Notes'] = row[8]
-                    temp['Rue'] = row[9].replace(',', '');
-                    temp['Code postal'] = row[10]
-                    temp['Ville'] = row[11]
-                    temp['Téléphone'] = row[12]
-                    temp['Courriel'] = row[13]
+                    temp['Nom'] = '"'+row[5]+'"'
+                    temp['Nom Commercial'] = '"'+row[6]+'"'
+                    temp['detailed_activity'] = '"'+row[7]+'"'
+                    temp['Notes'] = '"'+row[8]+'"'
+                    temp['Rue'] = '"'+row[9]+'"'
+                    #temp['Rue'] = row[9].replace(',', '');
+                    temp['Code postal'] = '"'+row[10]+'"'
+                    temp['Ville'] = '"'+row[11]+'"'
+                    temp['Téléphone'] = '"'+row[13]+'"'
+                    temp['Courriel'] = '"'+row[14]+'"'
                     temp['Membre libre'] = "Non"   
                     temp['Est une entreprise'] = "1"
-                    if (row[14] == "association"):
+                    if (row[15] == "association"):
                         temp['Est une association'] = "1"
-                        found = False
-                        for key in assos:
-                            if (row[5] == assos[key]['name'].upper()):
-                                #print (assos[key]['description'])
-                                temp['detailed_activity'] = assos[key]['description']
-                                found = True
-                        if (found == False):
-                            temp['detailed_activity'] = ""
+                        # found = False
+                        # for key in assos:
+                        #     if (row[5] == assos[key]['name'].upper()):
+                        #         #print (assos[key]['description'])
+                        #         temp['detailed_activity'] = assos[key]['description']
+                        #         found = True
+                        # if (found == False):
+                        #     temp['detailed_activity'] = ""
                     else:
                         temp['Est une association'] = "0"
-                        temp['detailed_activity'] = ""
+                        
                     #print(temp)
                     results.append(temp)
             else:
                 if ((row[5] != "") and (row[5] != "X") and (row[4] == "")):
-                    temp['Nom'] = row[5]
-                    temp['Notes'] = row[8]
-                    temp['Rue'] = row[9].replace(',', '');
-                    temp['Code postal'] = row[10]
-                    temp['Ville'] = row[11]
-                    temp['Téléphone'] = row[12]
-                    temp['Courriel'] = row[13]
+                    temp['Nom'] = '"'+row[5]+'"'
+                    temp['Nom Commercial'] = '"'+row[6]+'"'
+                    temp['detailed_activity'] = '"'+row[7]+'"'
+                    temp['Notes'] = '"'+row[8]+'"'
+                    temp['Rue'] = '"'+row[9]+'"'
+                    #temp['Rue'] = row[9].replace(',', '');
+                    temp['Code postal'] = '"'+row[10]+'"'
+                    temp['Ville'] = '"'+row[11]+'"'
+                    temp['Téléphone'] = '"'+row[13]+'"'
+                    temp['Courriel'] = '"'+row[14]+'"'
                     temp['Membre libre'] = "Non"
                     temp['Est une entreprise'] = "1"
-                    if (row[14] == "association"):
+                    if (row[15] == "association"):
                         temp['Est une association'] = "1"
-                        found = False
-                        for key in assos:
-                            if (row[5] == assos[key]['name'].upper()):
-                                temp['detailed_activity'] = assos[key]['description']
-                                found = True
-                        if (found == False):
-                            temp['detailed_activity'] = ""
+                        # found = False
+                        # for key in assos:
+                        #     if (row[5] == assos[key]['name'].upper()):
+                        #         temp['detailed_activity'] = assos[key]['description']
+                        #         found = True
+                        # if (found == False):
+                        #     temp['detailed_activity'] = ""
                     else:
                         temp['Est une association'] = "0"
-                        temp['detailed_activity'] = ""
                     #print(temp)
                     results.append(temp)
     return results
@@ -188,43 +193,6 @@ def convertAssos():
         #print(data)
         #return data
 
-""" def updateOdooAdhsMemberships(adhsodoo, adhscsv):
-    connection = connect()
-    for adhcsv in adhscsv:
-        if 'Montant' in adhcsv:
-            if (adhcsv['Montant'] != ''):
-                amount = int(adhcsv['Montant'].replace('€', ''))
-                ref = adhcsv['Référence interne']
-                #print(ref+" "+str(amount))
-                for adhodoo in adhsodoo:
-                    #print("odoo "+adhodoo['ref'])
-                    if (str(ref) == str(adhodoo['ref'])):
-                        #print(str(adhodoo['id'])+' '+ref)
-                        sql = "update account_invoice set amount_untaxed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set amount_untaxed_signed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set amount_total="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set amount_total_signed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set amount_total_company_signed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set residual="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set residual_signed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        sql = "update account_invoice set residual_company_signed="+str(amount)+" where partner_id="+str(adhodoo['id'])+";"
-                        print(sql)
-                        #if (connection != None):
-                        #    try:
-                        #        with connection.cursor() as cursor:
-                        #            cursor.execute(sql)
-                        #    finally:
-                        #        connection.close()
-                #print(sql)
-                #cursor.execute(sql) """
-
 if __name__ == '__main__':
     #adhscsv = parsePart("active")
     #exportResults(adhscsv, "eggs2022.csv")
@@ -232,8 +200,8 @@ if __name__ == '__main__':
     #exportResults(adhscsv, "eggs.csv")
     adhspro = parsePro("active")
     exportResults(adhspro, "eggspros2022.csv")
-    #adhspro = parsePro("false")
-    #exportResults(adhspro, "eggspros.csv")
+    adhspro = parsePro("false")
+    exportResults(adhspro, "eggspros.csv")
     
     
     #adhsodoo = parseOdooAdhs()
