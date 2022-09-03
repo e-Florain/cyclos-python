@@ -148,7 +148,7 @@ class Odoo2Cyclos:
                     if (name != unidecode.unidecode(listUsersCyclos[k]["display"])):
                         #print (listUsersCyclos[k]["display"])
                         changes['field'] = 'display'
-                        changes['newvalue'] = unidecode.unidecode(v["name"])
+                        changes['newvalue'] = name
                         changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
                         changes['type'] = 'modify'
                         # A changer par la suite avec la date de modification
