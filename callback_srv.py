@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys
 import logging
 import os
 import re
 import time
+import json
 from logging.handlers import RotatingFileHandler
 import threading  # launch server in a thread
 import requests  # make http request to shutdown web server
@@ -15,6 +17,7 @@ from cherrypy import wsgiserver
 from helloasso import HelloAsso
 from filelock import FileLock
 from mollie import Mollie
+from Odoo2Cyclos import Odoo2Cyclos
 
 LOG_HEADER = " [" + __file__ + "] - "
 p = re.compile("\w+(\d)")
@@ -31,24 +34,47 @@ webLogger.addHandler(fileHandler)
 app = Flask(__name__)
 ha = HelloAsso()
 mo = Mollie()
+o2c = Odoo2Cyclos()
 
 @app.route('/')
 def hello_world():
     webLogger.info(LOG_HEADER + '[/] GET')
+    with FileLock("myfile.txt"):
     #ha.setTransactionstoCyclos()
-    mo.setTransactionstoCyclos()
-    return 'Check Paiments - 200 - OK'
+        mo.setTransactionstoCyclos()
+        return 'Check Paiments - 200 - OK'
 
 @app.route('/paiement', methods=['POST'])
 def paiement():
+    webLogger.info(LOG_HEADER + '[/paiement] POST')
     data = request.form.to_dict()
     #print(data, request, type(request))
     with FileLock("myfile.txt"):
         ha.getToken()
-        webLogger.info(LOG_HEADER + '[/paiement] POST')
         ha.setTransactionstoCyclos()
         mo.setTransactionstoCyclos()
         return "200 - OK"
+
+@app.route('/allow/<string:argkey>')
+def test(argkey):
+    webLogger.info(LOG_HEADER + '[/allow/'+argkey+'] GET')
+    with open(os.path.dirname(os.path.abspath(__file__))+"/url.key") as keysjsons:
+        arr = json.loads(keysjsons.read())
+        for key, value in arr.items():
+            #print(key+" "+value)
+            if (argkey == key):
+                if (re.match('\d{8}-\d{6}-adhpros-changes\.json', value) is not None):
+                    webLogger.info(LOG_HEADER + 'o2c apply adhpros '+value)
+                    print('o2c apply adhpros '+value)
+                    o2c.applyChangesAdhPros(value)
+                else:
+                    webLogger.info(LOG_HEADER + 'o2c apply adhs '+value)
+                    #o2c.applyChangesAdhs(value)
+                print("OK - "+value)
+                # todo : apply json
+                # todo : delete filename from json
+                return "200"
+    return "503"
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 80), d)
