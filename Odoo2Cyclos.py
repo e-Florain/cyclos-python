@@ -167,14 +167,14 @@ class Odoo2Cyclos:
     def getChangesAdhPros(self):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getChangesAdhPros')
         changesDB = dict()
-        listUsersSQL = self.getUsersOdoo("adhpros")
-        #print(listUsersSQL)
+        listUsersOdoo = self.getUsersOdoo("adhpros")
+        #print(listUsersOdoo)
         listUsersCyclos = self.getUsersCyclos(self.cyclosgrppro)
         #print(listUsersCyclos)
         for k, v in listUsersCyclos.items():
             #print(k)
             #print(v)
-            if (k not in listUsersSQL):
+            if (k not in listUsersOdoo):
                 #print("DELETE")
                 #print(k)
                 changes = dict()
@@ -184,7 +184,7 @@ class Odoo2Cyclos:
                 listchanges.append(changes)
                 changesDB[k] = listchanges
             #break
-        for k, v in listUsersSQL.items():
+        for k, v in listUsersOdoo.items():
             #print (v)
             #print("CREATE "+k)
             if (v["account_cyclos"]):
