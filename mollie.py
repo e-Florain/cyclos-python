@@ -107,7 +107,9 @@ class Mollie:
             res = {}
             if (payment['id'] not in listtransactions):
                 if 'paidAt' in payment:
-                    if ((payment['description'] == "Change Florain") and (payment['status'] == "paid")):
+                    if (((payment['description'] == "Change Florain") 
+                    or (payment['description'] == "Change CB"))
+                    and (payment['status'] == "paid")):
                         tmp = {
                             'date': payment['paidAt'],
                             'orderdate': payment['createdAt'],
