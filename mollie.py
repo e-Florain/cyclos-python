@@ -52,7 +52,7 @@ class Mollie:
         except requests.exceptions.RequestException as e:
             paiementLogger.error(LOG_HEADER + '[-] Exception')
             raise SystemExit(e)
-        if (resp.status_code != "200"):
+        if (resp.status_code != 200):
             paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
             exit
         result = json.loads(resp.text)
@@ -71,7 +71,7 @@ class Mollie:
         except requests.exceptions.RequestException as e:
             paiementLogger.error(LOG_HEADER + '[-] Exception')
             raise SystemExit(e)
-        if (resp.status_code != "200"):
+        if (resp.status_code != 200):
             paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
             exit
         result = json.loads(resp.text)
@@ -91,7 +91,7 @@ class Mollie:
         except requests.exceptions.RequestException as e:
             paiementLogger.error(LOG_HEADER + '[-] Exception')
             raise SystemExit(e)
-        if (resp.status_code != "200"):
+        if (resp.status_code != 200):
             paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
             exit
         result = json.loads(resp.text)
@@ -99,6 +99,7 @@ class Mollie:
         return result
 
     def setTransactionstoCyclos(self):
+        cyclos = Cyclos()
         listtransactions = self.get_old_payments()
         payments = self.get_payments()
         for payment in payments:
@@ -106,26 +107,41 @@ class Mollie:
             res = {}
             if (payment['id'] not in listtransactions):
                 if 'paidAt' in payment:
-                    #print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
-                    tmp = {
-                        'date': payment['paidAt'],
-                        'orderdate': payment['createdAt'],
-                        'orderid': payment['id'],
-                        #'transactionCyclos' : res_object['transactionNumber'],
-                        #'formulaire': data['order']['formSlug'],
-                        #'email': data['payer']['email'],
-                        #'client': payment['details']['consumerName'],
-                        'state': payment['status'],
-                        #'paymentMeans': data['paymentMeans'],
-                        'description': payment['description'],
-                        'method': payment['method'],
-                        'amount': payment['amount']['value']
-                    }
-                    if 'customerId' in payment:
-                        infoscustomer = self.get_user(payment['customerId'])
-                        tmp['email'] = infoscustomer['email']
-                    
-                    listtransactions[payment['id']] = tmp
+                    if ((payment['description'] == "Change Florain") and (payment['status'] == "paid")):
+                        tmp = {
+                            'date': payment['paidAt'],
+                            'orderdate': payment['createdAt'],
+                            'orderid': payment['id'],
+                            #'transactionCyclos' : res_object['transactionNumber'],
+                            #'formulaire': data['order']['formSlug'],
+                            #'email': data['payer']['email'],
+                            #'client': payment['details']['consumerName'],
+                            'state': payment['status'],
+                            #'paymentMeans': data['paymentMeans'],
+                            'description': payment['description'],
+                            'method': payment['method'],
+                            'amount': payment['amount']['value']
+                        }
+                        if 'customerId' in payment:
+                            infoscustomer = self.get_user(payment['customerId'])
+                            email = infoscustomer['email']
+                        amount = payment['amount']['value']
+                        accountID = cyclos.getIdFromEmail(email)
+                        if (accountID == False):
+                            paiementLogger.error(LOG_HEADER+"account cyclos not found")
+                            return
+                        print(accountID)
+                        msglog = LOG_HEADER + '[-] '
+                        if (self.simulate):
+                            msglog += 'SIMULATE'
+                        paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amount)+' Mollie:'+str(payment['id'])+' to: '+email)
+                        #if ((not self.simulate) and (payment['mode'] != "test")):     
+                            #res = cyclos.setPaymentSystemtoUser(accountID, amount,"Transaction via Mollie Id : "+str(payment['id']))
+                            #print(res)
+                            #res_object = json.loads(res.text)
+                        #print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
+   
+                        listtransactions[payment['id']] = tmp
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
