@@ -100,15 +100,20 @@ class Mollie:
 
     def setTransactionstoCyclos(self):
         cyclos = Cyclos()
+        msglog = LOG_HEADER + '[-] '
         listtransactions = self.get_old_payments()
         payments = self.get_payments()
         for payment in payments:
+            #paiementLogger.info(msglog + json.dumps(payment, indent=4, sort_keys=True))
             #self.display_json(payment)
             res = {}
             if (payment['id'] not in listtransactions):
                 if 'paidAt' in payment:
+                    changeCB = False
+                    if (re.match("^Change CB.*", payment['description']) != None):
+                        changeCB = True
                     if (((payment['description'] == "Change Florain") 
-                    or (payment['description'] == "Change CB"))
+                    or changeCB)
                     and (payment['status'] == "paid")):
                         tmp = {
                             'date': payment['paidAt'],
@@ -131,12 +136,11 @@ class Mollie:
                         accountID = cyclos.getIdFromEmail(email)
                         if (accountID == False):
                             paiementLogger.error(LOG_HEADER+"account cyclos not found")
-                            return
-                        print(accountID)
-                        msglog = LOG_HEADER + '[-] '
+                            tmp['statusCyclos'] = "account cyclos not found"
+                        #print(accountID)
                         if (self.simulate):
                             msglog += 'SIMULATE'
-                        paiementLogger.info(msglog + ' PAIEMENT : id:'+ accountID+' amount:'+str(amount)+' Mollie:'+str(payment['id'])+' to: '+email)
+                        paiementLogger.info(msglog + ' PAIEMENT : id:'+ str(accountID)+' amount:'+str(amount)+' Mollie:'+str(payment['id'])+' to: '+email)
                         #if ((not self.simulate) and (payment['mode'] != "test")):     
                             #res = cyclos.setPaymentSystemtoUser(accountID, amount,"Transaction via Mollie Id : "+str(payment['id']))
                             #print(res)
