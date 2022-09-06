@@ -10,6 +10,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 import time
 import unidecode
+from datetime import datetime
+import re
 import json
 import config as cfg
 import importlib.util
@@ -100,7 +102,7 @@ class Odoo2Cyclos:
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getChangesAdhs')
         changesDB = dict()
         listUsersOdoo = self.getUsersOdoo("adhs")
-        #print(listUsersSQL)
+        #print(listUsersOdoo)
         listUsersCyclos = self.getUsersCyclos(self.cyclosgrppart)
         #print(listUsersCyclos)
         for k, v in listUsersCyclos.items():
@@ -132,6 +134,13 @@ class Odoo2Cyclos:
                     #if (v['email']) == "null":
                     #    next;
                     infostocreate['email'] = v['email']
+                    res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                    if (res != None):
+                        date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                        infostocreate['DateFinAdhesion'] = date_object.strftime("%Y-%m-%d")
+                    else:
+                        infostocreate['DateFinAdhesion'] = ""
+                    infostocreate['Num_adherent_part'] = v['ref']
                     #infostocreate['adh_id'] = v['adh_id']
                     infostocreate['name'] = firstname_unaccented+" "+lastname_unaccented
                     changes['infos'] = infostocreate
@@ -139,24 +148,75 @@ class Odoo2Cyclos:
                     changesDB[k] = listchanges
                 else:
                     #print("COMPARE")
-                    changed = False
-                    changes = dict()
-                    listchanges = list()
-                    lastname_unaccented = unidecode.unidecode(v['lastname'])
-                    firstname_unaccented = unidecode.unidecode(v['firstname'])
-                    name = firstname_unaccented+" "+lastname_unaccented
-                    if (name != unidecode.unidecode(listUsersCyclos[k]["display"])):
-                        #print (listUsersCyclos[k]["display"])
-                        changes['field'] = 'display'
-                        changes['newvalue'] = name
-                        changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
-                        changes['type'] = 'modify'
-                        # A changer par la suite avec la date de modification
-                        changes['dbtochange'] = 'cyclos'
-                        changed = True
-                        listchanges.append(changes)
-                    if (changed):
-                        changesDB[k] = listchanges
+                    if (listUsersCyclos[k]['status'] == 'active'):
+                        changed = False
+                        changes = dict()
+                        listchanges = list()
+                        lastname_unaccented = unidecode.unidecode(v['lastname'])
+                        firstname_unaccented = unidecode.unidecode(v['firstname'])
+                        name = firstname_unaccented+" "+lastname_unaccented
+                        if (name != unidecode.unidecode(listUsersCyclos[k]["display"])):
+                            #print (listUsersCyclos[k]["display"])
+                            changes['field'] = 'display'
+                            changes['newvalue'] = name
+                            changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
+                            changes['type'] = 'modify'
+                            # A changer par la suite avec la date de modification
+                            changes['dbtochange'] = 'cyclos'
+                            changed = True
+                            listchanges.append(changes)
+                        if not 'customValues' in listUsersCyclos[k]:
+                            # DateFinAdhesion
+                            res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                            if (res != None):
+                                date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                                datefinadh = date_object.strftime("%Y-%m-%d")
+                            else:
+                                datefinadh = ""
+                            changes['field'] = 'DateFinAdhesion'
+                            changes['newvalue'] = datefinadh
+                            changes['oldvalue'] = ""
+                            changes['type'] = 'modify'
+                            changes['dbtochange'] = 'cyclos'
+                            changed = True
+                            listchanges.append(changes)
+                            # Num_adherent_part
+                            changes['field'] = 'Num_adherent_part'
+                            changes['newvalue'] = v['ref']
+                            changes['oldvalue'] = ""
+                            changes['type'] = 'modify'
+                            changes['dbtochange'] = 'cyclos'
+                            changed = True
+                            listchanges.append(changes)
+                        else:
+                            for customvalue in listUsersCyclos[k]['customValues']:
+                                if (customvalue['field']['internalName'] == "DateFinAdhesion"):
+                                    res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                                    if (res != None):
+                                        date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                                        datefinadh = date_object.strftime("%Y-%m-%d")
+                                        res2 = re.match('^'+datefinadh, customvalue['dateValue'])
+                                        if (res2 == None):
+                                            changes['field'] = 'DateFinAdhesion'
+                                            changes['newvalue'] = datefinadh
+                                            changes['oldvalue'] = customvalue['dateValue']
+                                            changes['type'] = 'modify'
+                                            # A changer par la suite avec la date de modification
+                                            changes['dbtochange'] = 'cyclos'
+                                            changed = True
+                                            listchanges.append(changes)
+                                if (customvalue['field']['internalName'] == "Num_adherent_part"):
+                                    if (customvalue['integerValue'] != int(v['ref'])):
+                                        changes['field'] = 'Num_adherent_part'  
+                                        changes['newvalue'] = int(v['ref'])
+                                        changes['oldvalue'] = customvalue['integerValue']
+                                        changes['type'] = 'modify'
+                                        # A changer par la suite avec la date de modification
+                                        changes['dbtochange'] = 'cyclos'
+                                        changed = True
+                                        listchanges.append(changes)
+                        if (changed):
+                            changesDB[k] = listchanges
         #print(changesDB)
         jsonfilename = time.strftime("%Y%m%d-%H%M%S")+'-adhs-changes.json'
         #print(jsonfilename)
@@ -279,17 +339,18 @@ class Odoo2Cyclos:
                                 odoo2cyclosLogger.info(LOG_HEADER + '[-] impossible de trouver '+k)
                             else:
                                 self.cyclos.disableUser(id)"""
-                        """if (changes['type'] == "modify"):
-                            print("modify "+k)
-                            #id = cyclos.getIdFromEmail(k)
+                        if (changes['type'] == "modify"):
+                            #print("modify "+k)
+                            data = self.cyclos.getUserDateForEdit(k)
+                            data['user']['name'] = changes['newvalue']
                             #data={changes['field']: changes['newvalue']}
-                            data={"name": changes['newvalue'], "username": k, "email": k}
-                            self.cyclos.putUser(k, data)"""
+                            #data={"name": changes['newvalue'], "username": k, "email": k}
+                            self.cyclos.putUser(k, data['user'])
                         if (changes['type'] == "create"):
                             if (k != "null"):
                                 #print("create "+k)
                                 infos = changes['infos']
-                                result_json = self.cyclos.addUser(infos['email'], infos['name'], infos['email'])
+                                result_json = self.cyclos.addUser(infos['email'], infos['name'], infos['email'], infos['Num_adherent_part'], infos['DateFinAdhesion'])
 
     def getUsersOdoo(self, type):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersOdoo '+type)
