@@ -32,7 +32,7 @@ class Cyclos:
     def getAuth(self):
         cyclosLogger.info(LOG_HEADER + '[-] '+'auth')
         resp = requests.get(self.url+'/auth', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -45,10 +45,20 @@ class Cyclos:
     def getUser(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getUser/'+user)
         resp = requests.get(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
+
+    def getUserDateForEdit(self, user):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'getUserDateForEdit/'+user)
+        resp = requests.get(self.url+'/users/'+user+'/data-for-edit-profile', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        #self.displayJson(resp.text)
         return json.loads(resp.text)
 
     def getAdhPro(self, email):
@@ -63,8 +73,25 @@ class Cyclos:
         #print(data)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         id = self.getIdFromEmail(email)
-        resp = requests.put(self.url+'/users/'+id, auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (id != False):
+            resp = requests.put(self.url+'/users/'+id, auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+            if (not resp.ok):
+                cyclosLogger.error(LOG_HEADER + resp.text)
+            if (self.debug):
+                cyclosLogger.debug(LOG_HEADER + resp.text)
+            return resp.text
+        else:
+            cyclosLogger.error(LOG_HEADER + "User not found")
+        #print(resp.text)
+        #self.displayJson(resp.text)
+
+    def postUser(self, email, data):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'postUser/'+email+'/profile '+str(data))
+        #print(data)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        id = self.getIdFromEmail(email)
+        resp = requests.post(self.url+'/users/'+id+'/profile', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -73,7 +100,7 @@ class Cyclos:
     def getAllUsers(self):
         cyclosLogger.info(LOG_HEADER + 'getAllUsers')
         resp = requests.get(self.url+'/users?pageSize=10000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -82,7 +109,7 @@ class Cyclos:
     def getUsers(self, group):
         cyclosLogger.info(LOG_HEADER + 'getUsers/'+group)
         resp = requests.get(self.url+'/users?groups='+group+'&pageSize=10000&statuses=active&statuses=active&statuses=blocked&statuses=pending', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -106,44 +133,47 @@ class Cyclos:
                 return user['id']
         return False
 
-    def addUser(self, username, name, email):
+    def addUser(self, username, name, email, password, numAdhPart, datefinadh):
         cyclosLogger.info(LOG_HEADER + '[-] '+'addUser/'+username+'/'+email+'/'+name)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'username': username, 'name': name, 'email': email, 'group': 'particuliers', "passwords": [
             {
             "type": "login",
-            "value": "Azerty1234",
-            "checkConfirmation": True,
-            "confirmationValue": "Azerty1234",
-            "forceChange": False
+            "value": password,
+            #"checkConfirmation": True,
+            "confirmationValue": password,
+            "forceChange": True
             }
         ],
-        "skipActivationEmail": True
+            "customValues": {
+                "DateFinAdhesion": datefinadh,
+                "Num_adherent_part": numAdhPart
+            },
+            "skipActivationEmail": True
         }
         resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
         if (resp.status_code != 201):
             cyclosLogger.error(LOG_HEADER + email + " " + resp.text)
         return resp.text
 
-    def addPro(self, name, email, addresses):
+    def addPro(self, name, email, password, addresses):
         cyclosLogger.info(LOG_HEADER + '[-] '+'addPro/'+name+'/'+email+'/'+str(addresses))
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {"username": email, "name": name, "email": email, "group": "professionnels", "passwords": [
             {
             "type": "login",
-            "value": "Azerty1234",
+            "value": password,
             "checkConfirmation": True,
-            "confirmationValue": "Azerty1234",
+            "confirmationValue": password,
             "forceChange": True
             }
         ],
         "customValues":
             { 
-            #"Autorisation_eflorain_pro": "oui_eflorain_pro",
-            #"Autorisation_eflorain_part": "oui_eflorain_part",
-            #"Num_adherent_pro": adh_id
         },
         "skipActivationEmail": True,
         "acceptAgreement": True,
@@ -152,14 +182,14 @@ class Cyclos:
         resp = requests.post(self.url+'/users', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
-        if (resp.status_code != 201):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + email + " " + resp.text)
         return resp.text
 
     def getUserStatus(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getUserStatus/'+user)
         resp = requests.get(self.url+'/'+user+'/status', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -169,7 +199,7 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {"status": "disabled"}
         resp = requests.post(self.url+'/'+user+'/status', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -177,7 +207,7 @@ class Cyclos:
     def delUser(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'delUser/'+user)
         resp = requests.delete(self.url+'/users/'+user, auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -185,7 +215,7 @@ class Cyclos:
     def getPasswords(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getPasswords/'+user)
         resp = requests.get(self.url+'/'+user+'/passwords', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -197,7 +227,7 @@ class Cyclos:
         data = {'amount': amount, 'subject': accountID, 'type': 'debit.toUser', 'description': description}      
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -206,7 +236,7 @@ class Cyclos:
     def getPayments(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getPayments/'+user)
         resp = requests.get(self.url+'/'+user+'/payments/data-for-perform', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -214,7 +244,7 @@ class Cyclos:
     def getAddresses(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getAddresses/'+user)
         resp = requests.get(self.url+'/'+user+'/addresses', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -225,7 +255,7 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'name': 'Default', 'zip': '54200', 'city': 'Royaumeix', 'country': 'FR', 'defaultaddress': True, 'street': '10B rue d\'Alsace'}
         resp = requests.post(self.url+'/'+user+'/addresses', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -235,7 +265,7 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'amount': amount, 'subject': pro, 'type': 'MBNPart.transfertUsertoPro', 'description': description}
         resp = requests.post(self.url+'/'+user+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -243,7 +273,7 @@ class Cyclos:
     def getTransfers(self):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getTransfers')
         resp = requests.get(self.url+'/transfers', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -264,7 +294,7 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {'w': 'email'}
         resp = requests.post(self.url+'/'+user+'/passwords/login/reset-and-send', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -275,7 +305,7 @@ class Cyclos:
         data = {'oldPassword': oldpassword, 'newPassword': newpassword, 'checkConfirmation': True, 'newPasswordConfirmation': newpassword, 'forceChange': True}
         print(data)
         resp = requests.post(self.url+'/'+user+'/passwords/login/change', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -285,7 +315,7 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/enable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
@@ -295,25 +325,36 @@ class Cyclos:
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/disable', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
 
-    def generatePassword(self, user):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
+    def allowGeneratePassword(self, user):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'allowGeneratePassword/'+user)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data = {}
         resp = requests.post(self.url+'/'+user+'/passwords/login/allow-generation', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
+
+    def generatePassword(self):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'generatePassword')
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {}
+        resp = requests.post(self.url+'/passwords/login/generate', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        print (resp.text)     
 
     def getPasswords(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+user)
         resp = requests.get(self.url+'/'+user+'/passwords/login', auth=HTTPBasicAuth(self.user, self.password), verify=False)
-        if (resp.status_code != "200"):
+        if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)

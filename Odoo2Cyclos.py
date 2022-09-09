@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-import argparse
 import requests
 from requests.auth import HTTPBasicAuth
-
+import smtplib
+from email.message import EmailMessage
 import logging
 from logging.handlers import RotatingFileHandler
 import time
@@ -13,6 +13,8 @@ import unidecode
 from datetime import datetime
 import re
 import json
+import string
+import random
 import config as cfg
 import importlib.util
 from cyclos import Cyclos
@@ -40,6 +42,7 @@ class Odoo2Cyclos:
     def __init__(self, simulate=False):
         self.url = cfg.florapi['url']
         self.key = cfg.florapi['key']
+        self.smtp = cfg.smtp['ip']
         self.cyclosgrppro = "professionnels"
         self.cyclosgrppart = "particuliers"
         self.simulate = simulate
@@ -48,6 +51,21 @@ class Odoo2Cyclos:
         #self.grpPro = "professionnels"
         requests.packages.urllib3.disable_warnings()
     
+    def is_valid(self, password):
+        special_char = "!@%/()=?+.-"
+        password_characters = string.ascii_letters + string.digits + special_char
+        if len(password) < 8:
+            return False
+        if not any(c in password for c in special_char):
+            return False
+        if not any(c.isdigit() for c in password):
+            return False
+        if not any(c.islower() for c in password):
+            return False
+        if not any(c.isupper() for c in password):
+            return False
+        return True 
+
     def displayJson(self, json_text):
         #cyclosLogger.info(LOG_HEADER + '[-] '+'putUser/'+email+'/'+data)
         json_object = json.loads(json_text)
@@ -322,8 +340,15 @@ class Odoo2Cyclos:
                         if (changes['type'] == "create"):
                             print("create "+k)
                             infos = changes['infos']
-                            result_json = self.cyclos.addPro(infos['name'], infos['email'], infos['addresses'])
-                            print (result_json)
+                            length = 8
+                            special_char = "!@%/()=?+.-"
+                            password_characters = string.ascii_letters + string.digits + special_char
+                            password_string = ''
+                            while not self.is_valid(password_string):
+                                password_string = "".join([random.choice(password_characters)
+                                                for n in range(length)])
+                            result_json = self.cyclos.addPro(infos['name'], infos['email'], password_string, infos['addresses'])
+                            self.sendMail(infos['email'], password_string)
 
     def applyChangesAdhs(self, jsonfile):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'applyChangesAdhs')
@@ -350,7 +375,15 @@ class Odoo2Cyclos:
                             if (k != "null"):
                                 #print("create "+k)
                                 infos = changes['infos']
-                                result_json = self.cyclos.addUser(infos['email'], infos['name'], infos['email'], infos['Num_adherent_part'], infos['DateFinAdhesion'])
+                                length = 8
+                                special_char = "!@%/()=?+.-"
+                                password_characters = string.ascii_letters + string.digits + special_char
+                                password_string = ''
+                                while not self.is_valid(password_string):
+                                    password_string = "".join([random.choice(password_characters)
+                                                    for n in range(length)])
+                                result_json = self.cyclos.addUser(infos['email'], infos['name'], infos['email'], password_string, infos['Num_adherent_part'], infos['DateFinAdhesion'])
+                                self.sendMail(infos['email'], password_string)
 
     def getUsersOdoo(self, type):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersOdoo '+type)
@@ -364,25 +397,20 @@ class Odoo2Cyclos:
             listusersbyemail[user['email']] = user
         return listusersbyemail
 
-    """def getUserSQL(type):
-        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersOdoo '+type)
-        listusers=dict()
-        try:
-            with connection.cursor() as cursor:
-                if (type == "adhs"):
-                    sql = "SELECT * from res_partner where active='t' and account_cyclos='t' and is_company='f'"
-                if (type == "adhpros"):
-                    sql = "SELECT * from res_partner where active='t' and account_cyclos='t' and is_company='t'"
-                cursor.execute(sql)
-                resultsSQL = cursor.fetchall()
-                for resultSQL in resultsSQL:
-                    #print(resultSQL)
-                    if (resultSQL[pgsql_headers['email']] != None):
-                        listusers[resultSQL[pgsql_headers['email']]] = resultSQL
-                return listusers
-        finally:
-            connection.close()"""
-
+    def sendMail(self, email, password):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
+        msg = EmailMessage()
+        str = ""
+        str = str + "Vos identifiants :\n"
+        str = str + "Login : "+email+"\n"
+        str = str + "Mot de passe : "+password+"\n"
+        msg.set_content(str)
+        msg['Subject'] = f'Florain : vos identifiants'
+        msg['From'] = "no-reply@eflorain.fr"
+        msg['To'] = email
+        s = smtplib.SMTP(self.smtp)
+        s.send_message(msg)
+        s.quit()
 
     def getUsersCyclos(self, group):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersCyclos')
