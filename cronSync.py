@@ -29,7 +29,7 @@ if bool(arr):
     with open(os.path.dirname(os.path.abspath(__file__))+"/json/"+filename) as fp:
         str = str+fp.read()
     str = str + "\n"
-    str = str + "Pour valider ces changements, veuillez cliquer sur le lien suivant : http://"+url+"/allow/"+key
+    str = str + "Pour valider ces changements, veuillez cliquer sur le lien suivant : "+url+"/allow/"+key
     str = str + "\n"
 
 str = str + "---------------------------------------------------------------------------------------\n"
@@ -45,7 +45,7 @@ if bool(arr):
     with open(os.path.dirname(os.path.abspath(__file__))+"/json/"+filename) as fp:
         str = str+fp.read()
     str = str + "\n"
-    str = str + "Pour valider ces changements, veuillez cliquer sur le lien suivant : http://"+url+"/allow/"+key
+    str = str + "Pour valider ces changements, veuillez cliquer sur le lien suivant : "+url+"/allow/"+key
 
     with open(os.path.dirname(os.path.abspath(__file__))+'/url.key', 'w') as outfile:
         json.dump(keysjsons, outfile, indent=4, sort_keys=False, separators=(',', ':'))
