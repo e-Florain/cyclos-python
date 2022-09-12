@@ -56,7 +56,7 @@ def paiement():
         return "200 - OK"
 
 @app.route('/allow/<string:argkey>')
-def test(argkey):
+def changeCyclos(argkey):
     webLogger.info(LOG_HEADER + '[/allow/'+argkey+'] GET')
     with open(os.path.dirname(os.path.abspath(__file__))+"/url.key") as keysjsons:
         arr = json.loads(keysjsons.read())

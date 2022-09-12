@@ -5,7 +5,10 @@ import os
 import requests
 from requests.auth import HTTPBasicAuth
 import smtplib
-from email.message import EmailMessage
+import qrcode
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
 import logging
 from logging.handlers import RotatingFileHandler
 import time
@@ -45,6 +48,10 @@ class Odoo2Cyclos:
         self.smtp = cfg.smtp['ip']
         self.cyclosgrppro = "professionnels"
         self.cyclosgrppart = "particuliers"
+        self.nextcloud_url = cfg.nextcloud['url']
+        self.nextcloud_login = cfg.nextcloud['login']
+        self.nextcloud_password = cfg.nextcloud['password']
+        self.nextcloud_path = cfg.nextcloud['path']
         self.simulate = simulate
         #self.cyclos = cyclosvar.Cyclos()
         self.cyclos = Cyclos()
@@ -348,7 +355,9 @@ class Odoo2Cyclos:
                                 password_string = "".join([random.choice(password_characters)
                                                 for n in range(length)])
                             result_json = self.cyclos.addPro(infos['name'], infos['email'], password_string, infos['addresses'])
-                            self.sendMail(infos['email'], password_string)
+                            name = infos['name'].replace('/', '_')
+                            self.generateRandomQR(name, infos['email'])
+                            self.sendMail(infos['email'], password_string, name)
 
     def applyChangesAdhs(self, jsonfile):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'applyChangesAdhs')
@@ -397,19 +406,47 @@ class Odoo2Cyclos:
             listusersbyemail[user['email']] = user
         return listusersbyemail
 
-    def sendMail(self, email, password):
+    def postQrCode(self, name):
+        requests.packages.urllib3.disable_warnings()
+        headers = {'Content-type': 'image/png'}
+        fullurl = self.nextcloud_url + self.nextcloud_path + "/" + name
+        fp = open(os.path.dirname(os.path.abspath(__file__)) + "/" + name, "rb")
+        resp = requests.request("PUT", fullurl, auth=HTTPBasicAuth(self.nextcloud_login, self.nextcloud_password), data=fp.read(), verify=False, headers=headers)
+
+    def generateRandomQR(self, name, email):
+        qr = qrcode.QRCode(version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(email)
+        qr.make(fit=True)
+        img = qr.make_image()
+        img.save(os.path.dirname(os.path.abspath(__file__)) + "/" + name+".png")
+        self.postQrCode(name+".png")
+
+    def sendMail(self, email, password, name):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
-        msg = EmailMessage()
-        str = ""
-        str = str + "Vos identifiants :\n"
-        str = str + "Login : "+email+"\n"
-        str = str + "Mot de passe : "+password+"\n"
-        msg.set_content(str)
+        msg = MIMEMultipart()
+        str = "Bonjour,<br>"
+        str = str + "Voici vos identifiants :<br>"
+        str = str + "<b>Login</b> : "+email+"<br>"
+        str = str + "<b>Mot de passe</b> : "+password+"<br>"
+        str = str +"<br> Vous trouverez également en pièce jointe votre QRCode"
+        str = str +"qui permettra à vos clients de vous identifier dans Cyclos plus facilement"
+        msgText = MIMEText('%s' % (str), 'html')
+        msg.attach(msgText)
+        with open(os.path.dirname(os.path.abspath(__file__)) +'/'+name+'.png', 'rb') as fp:
+            img = MIMEImage(fp.read())
+            img.add_header('Content-Disposition', 'attachment', filename="QRCode.png")
+            msg.attach(img)
+
         msg['Subject'] = f'Florain : vos identifiants'
         msg['From'] = "no-reply@eflorain.fr"
         msg['To'] = email
         s = smtplib.SMTP(self.smtp)
-        s.send_message(msg)
+        #s.send_message(msg)
+        s.sendmail(msg['From'], msg['To'], msg.as_string())
         s.quit()
 
     def getUsersCyclos(self, group):
