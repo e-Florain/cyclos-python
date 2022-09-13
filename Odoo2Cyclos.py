@@ -425,6 +425,24 @@ class Odoo2Cyclos:
         img.save(os.path.dirname(os.path.abspath(__file__)) + "/" + name+".png")
         self.postQrCode(name+".png")
 
+    def sendMail(self, email, password):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
+        msg = MIMEMultipart()
+        str = "Bonjour,<br>"
+        str = str + "Voici vos identifiants :<br>"
+        str = str + "<b>Login</b> : "+email+"<br>"
+        str = str + "<b>Mot de passe</b> : "+password+"<br>"
+        msgText = MIMEText('%s' % (str), 'html')
+        msg.attach(msgText)
+
+        msg['Subject'] = f'Florain : vos identifiants'
+        msg['From'] = "no-reply@eflorain.fr"
+        msg['To'] = email
+        s = smtplib.SMTP(self.smtp)
+        #s.send_message(msg)
+        s.sendmail(msg['From'], msg['To'], msg.as_string())
+        s.quit()
+
     def sendMail(self, email, password, name):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
         msg = MIMEMultipart()
@@ -432,7 +450,7 @@ class Odoo2Cyclos:
         str = str + "Voici vos identifiants :<br>"
         str = str + "<b>Login</b> : "+email+"<br>"
         str = str + "<b>Mot de passe</b> : "+password+"<br>"
-        str = str +"<br> Vous trouverez également en pièce jointe votre QRCode"
+        str = str +"<br> Vous trouverez également en pièce jointe votre QRCode "
         str = str +"qui permettra à vos clients de vous identifier dans Cyclos plus facilement"
         msgText = MIMEText('%s' % (str), 'html')
         msg.attach(msgText)
