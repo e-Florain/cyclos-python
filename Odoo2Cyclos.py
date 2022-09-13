@@ -357,7 +357,7 @@ class Odoo2Cyclos:
                             result_json = self.cyclos.addPro(infos['name'], infos['email'], password_string, infos['addresses'])
                             name = infos['name'].replace('/', '_')
                             self.generateRandomQR(name, infos['email'])
-                            self.sendMail(infos['email'], password_string, name)
+                            self.sendMailPro(infos['email'], password_string, name)
 
     def applyChangesAdhs(self, jsonfile):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'applyChangesAdhs')
@@ -392,7 +392,7 @@ class Odoo2Cyclos:
                                     password_string = "".join([random.choice(password_characters)
                                                     for n in range(length)])
                                 result_json = self.cyclos.addUser(infos['email'], infos['name'], infos['email'], password_string, infos['Num_adherent_part'], infos['DateFinAdhesion'])
-                                self.sendMail(infos['email'], password_string)
+                                self.sendMailPart(infos['email'], password_string)
 
     def getUsersOdoo(self, type):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersOdoo '+type)
@@ -425,7 +425,7 @@ class Odoo2Cyclos:
         img.save(os.path.dirname(os.path.abspath(__file__)) + "/" + name+".png")
         self.postQrCode(name+".png")
 
-    def sendMail(self, email, password):
+    def sendMailPart(self, email, password):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
         msg = MIMEMultipart()
         str = "Bonjour,<br>"
@@ -443,7 +443,7 @@ class Odoo2Cyclos:
         s.sendmail(msg['From'], msg['To'], msg.as_string())
         s.quit()
 
-    def sendMail(self, email, password, name):
+    def sendMailPro(self, email, password, name):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
         msg = MIMEMultipart()
         str = "Bonjour,<br>"
