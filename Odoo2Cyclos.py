@@ -432,6 +432,7 @@ class Odoo2Cyclos:
         str = str + "Voici vos identifiants :<br>"
         str = str + "<b>Login</b> : "+email+"<br>"
         str = str + "<b>Mot de passe</b> : "+password+"<br>"
+        str = str + "<b>URL de connexion</b> : <a href=\"https://cyclos.florain.fr\">https://cyclos.florain.fr</a><br>"
         msgText = MIMEText('%s' % (str), 'html')
         msg.attach(msgText)
 
@@ -450,6 +451,7 @@ class Odoo2Cyclos:
         str = str + "Voici vos identifiants :<br>"
         str = str + "<b>Login</b> : "+email+"<br>"
         str = str + "<b>Mot de passe</b> : "+password+"<br>"
+        str = str + "<b>URL de connexion</b> : https://cyclos.florain.fr<br>"
         str = str +"<br> Vous trouverez également en pièce jointe votre QRCode "
         str = str +"qui permettra à vos clients de vous identifier dans Cyclos plus facilement"
         msgText = MIMEText('%s' % (str), 'html')
