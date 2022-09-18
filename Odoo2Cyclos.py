@@ -428,15 +428,31 @@ class Odoo2Cyclos:
     def sendMailPart(self, email, password):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
         msg = MIMEMultipart()
-        str = "Bonjour,<br>"
-        str = str + "Voici vos identifiants :<br>"
-        str = str + "<b>Login</b> : "+email+"<br>"
-        str = str + "<b>Mot de passe</b> : "+password+"<br>"
-        str = str + "<b>URL de connexion</b> : <a href=\"https://cyclos.florain.fr\">https://cyclos.florain.fr</a><br>"
+        str = "Bonjour,"
+        str = str + "<br/>À la suite de votre demande, vous trouverez ci-dessous vos identifiants personnels pour accéder à l'application sécurisée pour les paiements en Florain numérique : <b>Cyclos</b>"
+        str = str + "<br/><b>Login</b> : "+email
+        str = str + "<br/><b>Mot de passe</b> provisoire : "+password
+        str = str + "<br/><i>Lors de votre première connexion, ce mot de passe devra être personnalisé.</i>"
+        str = str + "<br/><b>URL de connexion</b> : <a href=\"https://cyclos.florain.fr\">https://cyclos.florain.fr</a>"
+        str = str + "<br/>"
+        str = str + "<br/>Vous pouvez accéder à Cyclos : "
+        str = str + "<br/>* Depuis un navigateur (Firefox, Chrome, etc ...) avec un ordinateur ou un smartphone"
+        str = str + "<br/>* Depuis l'application mobile, téléchargeable sur "
+        str = str + "<br/> <a href=\"https://play.google.com/store/apps/details?id=org.cyclos.mobile\"  target=\"_blank\"> Google Play </a>"
+        str = str + "<br/> et <a href=\"https://apps.apple.com/fr/app/cyclos-4-mobile/id829007510#?platform=iphone\"  target=\"_blank\"> App Store</a>"
+        str = str + "<br/>"
+        str = str + "<br/> Si vous n'êtes pas l'origine de cette demande, veuillez ignorer ce message."
+        str = str + "<br/> Le Florain"
+        str = str + "<br/>"
+        str = str + "<br/> <i>Vous recevez cet email car vous avez accepté de recevoir des informations du Florain, ou que vous avez utilisé un de nos services."
+        str = str + "<br/> Vous disposez des droits d'opposition, d'accès, de rectification, d'oubli et de portabilité des données qui vous concernent, ainsi que de limitation des finalités."
+        str = str + "<br/> Pour exercer ces droits, contactez-nous via la rubrique \"Contact\"."
+        str = str + "<br/> Retrouvez nous sur Florain.fr </i>"
+
         msgText = MIMEText('%s' % (str), 'html')
         msg.attach(msgText)
 
-        msg['Subject'] = f'Florain : vos identifiants'
+        msg['Subject'] = f'Florain numérique : vos identifiants'
         msg['From'] = "no-reply@eflorain.fr"
         msg['To'] = email
         s = smtplib.SMTP(self.smtp)
@@ -447,13 +463,31 @@ class Odoo2Cyclos:
     def sendMailPro(self, email, password, name):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'sendMail')
         msg = MIMEMultipart()
-        str = "Bonjour,<br>"
-        str = str + "Voici vos identifiants :<br>"
-        str = str + "<b>Login</b> : "+email+"<br>"
-        str = str + "<b>Mot de passe</b> : "+password+"<br>"
-        str = str + "<b>URL de connexion</b> : https://cyclos.florain.fr<br>"
-        str = str +"<br> Vous trouverez également en pièce jointe votre QRCode "
-        str = str +"qui permettra à vos clients de vous identifier dans Cyclos plus facilement"
+        str = "Bonjour,"
+        str = str + "<br/>À la suite de votre demande, vous trouverez ci-dessous vos identifiants personnels pour accéder à l'application sécurisée pour les paiements en Florain numérique : <b>Cyclos</b>"
+        str = str + "<br/><b>Login</b> : "+email
+        str = str + "<br/><b>Mot de passe</b> provisoire : "+password
+        str = str + "<br/><i>Lors de votre première connexion, ce mot de passe devra être personnalisé.</i>"
+        str = str + "<br/><b>URL de connexion</b> : <a href=\"https://cyclos.florain.fr\">https://cyclos.florain.fr</a>"
+        str = str + "<br/>"
+        str = str +"<br/>Vous trouverez également en pièce jointe votre QRCode à imprimer,"
+        str = str +" pour permettre à vos clients de vous identifier dans Cyclos plus facilement."
+        str = str + "<br/>"
+        str = str + "<br/>Vous pouvez accéder à Cyclos : "
+        str = str + "<br/>* Depuis un navigateur (Firefox, Chrome, etc ...) avec un ordinateur ou un smartphone"
+        str = str + "<br/>* Depuis l'application mobile, téléchargeable sur "
+        str = str + "<br/> <a href=\"https://play.google.com/store/apps/details?id=org.cyclos.mobile\"  target=\"_blank\"> Google Play </a>"
+        str = str + "<br/> et <a href=\"https://apps.apple.com/fr/app/cyclos-4-mobile/id829007510#?platform=iphone\"  target=\"_blank\"> App Store</a>"
+        str = str + "<br/>"
+        str = str + "<br/> Si vous n'êtes pas l'origine de cette demande, veuillez ignorer ce message."
+        str = str + "<br/> Le Florain"
+        str = str + "<br/>"
+        str = str + "<br/> <i>Vous recevez cet email car vous avez accepté de recevoir des informations du Florain, ou que vous avez utilisé un de nos services."
+        str = str + "<br/> Vous disposez des droits d'opposition, d'accès, de rectification, d'oubli et de portabilité des données qui vous concernent, ainsi que de limitation des finalités."
+        str = str + "<br/> Pour exercer ces droits, contactez-nous via la rubrique \"Contact\"."
+        str = str + "<br/> Retrouvez nous sur Florain.fr </i>"
+
+        
         msgText = MIMEText('%s' % (str), 'html')
         msg.attach(msgText)
         with open(os.path.dirname(os.path.abspath(__file__)) +'/'+name+'.png', 'rb') as fp:
@@ -461,7 +495,7 @@ class Odoo2Cyclos:
             img.add_header('Content-Disposition', 'attachment', filename="QRCode.png")
             msg.attach(img)
 
-        msg['Subject'] = f'Florain : vos identifiants'
+        msg['Subject'] = f'Florain numérique : vos identifiants'
         msg['From'] = "no-reply@eflorain.fr"
         msg['To'] = email
         s = smtplib.SMTP(self.smtp)
