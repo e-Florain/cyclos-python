@@ -141,12 +141,15 @@ class Mollie:
                         if (self.simulate):
                             msglog += 'SIMULATE'
                         paiementLogger.info(msglog + ' PAIEMENT : id:'+ str(accountID)+' amount:'+str(amount)+' Mollie:'+str(payment['id'])+' to: '+email)
-                        #if ((not self.simulate) and (payment['mode'] != "test")):     
-                            #res = cyclos.setPaymentSystemtoUser(accountID, amount,"Transaction via Mollie Id : "+str(payment['id']))
+                        if ((not self.simulate) and (payment['mode'] != "test")):     
+                            res = cyclos.setPaymentSystemtoUser(accountID, amount,"Transaction via Mollie Id : "+str(payment['id']))
                             #print(res)
-                            #res_object = json.loads(res.text)
-                        #print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
-   
+                            res_object = json.loads(res.text)
+                            #print(payment['amount']['value']+' '+payment['description']+' '+payment['paidAt']+' '+payment['method'])
+                            if ('transactionNumber' in res_object):
+                                tmp['transactionCyclos'] = res_object['transactionNumber']
+                            else:
+                                paiementLogger.error(LOG_HEADER+res.text)
                         listtransactions[payment['id']] = tmp
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
