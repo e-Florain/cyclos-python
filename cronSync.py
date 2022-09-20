@@ -56,7 +56,7 @@ msg.set_content(str)
 msg['Subject'] = f'Attention modifications à faire sur cyclos'
 #msg['From'] = "odoo@eflorain.fr"
 msg['From'] = "odoo@eflorain.fr"
-msg['To'] = "groche@guigeek.org"
+msg['To'] = "tech@florain.fr"
 
 # Send the message via our own SMTP server.
 s = smtplib.SMTP(smtp)
