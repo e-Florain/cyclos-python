@@ -14,7 +14,6 @@ from flask import Flask
 from flask import request
 import time, signal
 from cherrypy import wsgiserver
-from helloasso import HelloAsso
 from filelock import FileLock
 from mollie import Mollie
 from Odoo2Cyclos import Odoo2Cyclos
@@ -32,17 +31,22 @@ fileHandler.setFormatter(logFormatter)
 webLogger.addHandler(fileHandler)
 
 app = Flask(__name__)
-ha = HelloAsso()
 mo = Mollie()
 o2c = Odoo2Cyclos()
 
 @app.route('/')
-def hello_world():
+def getPaiements():
     webLogger.info(LOG_HEADER + '[/] GET')
     with FileLock("myfile.txt"):
-    #ha.setTransactionstoCyclos()
         mo.setTransactionstoCyclos()
-        return 'Check Paiments - 200 - OK'
+        return '200'
+
+@app.route('/', methods=['POST'])
+def postPaiements():
+    webLogger.info(LOG_HEADER + '[/] POST')
+    with FileLock("myfile.txt"):
+        mo.setTransactionstoCyclos()
+        return '200'
 
 @app.route('/paiement', methods=['POST'])
 def paiement():
@@ -50,10 +54,8 @@ def paiement():
     data = request.form.to_dict()
     #print(data, request, type(request))
     with FileLock("myfile.txt"):
-        ha.getToken()
-        ha.setTransactionstoCyclos()
         mo.setTransactionstoCyclos()
-        return "200 - OK"
+        return '200'
 
 @app.route('/allow/<string:argkey>')
 def changeCyclos(argkey):
