@@ -58,8 +58,7 @@ msg['Subject'] = f'Attention modifications à faire sur cyclos'
 msg['From'] = "odoo@eflorain.fr"
 msg['To'] = "groche@guigeek.org"
 
-# Send the message via our own SMTP server.
-s = smtplib.SMTP(smtp)
-if (str != ""): 
+if (str != ""):
+    s = smtplib.SMTP(smtp)
     s.send_message(msg)
-s.quit()
+    s.quit()
