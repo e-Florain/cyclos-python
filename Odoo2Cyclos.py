@@ -498,7 +498,7 @@ class Odoo2Cyclos:
         msg['Subject'] = f'Florain numérique : vos identifiants'
         msg['From'] = "no-reply@eflorain.fr"
         msg['To'] = email
-        msg['cci'] = "tech@florain.fr"
+        msg['bcc'] = "tech@florain.fr"
         s = smtplib.SMTP(self.smtp)
         #s.send_message(msg)
         s.sendmail(msg['From'], msg['To'], msg.as_string())
