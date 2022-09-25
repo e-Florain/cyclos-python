@@ -31,9 +31,9 @@ if bool(arr):
     str = str + "\n"
     str = str + "Pour valider ces changements, veuillez cliquer sur le lien suivant : "+url+"/allow/"+key
     str = str + "\n"
-
-str = str + "---------------------------------------------------------------------------------------\n"
-str = str + "---------------------------------------------------------------------------------------\n"
+if (str != ""):
+    str = str + "---------------------------------------------------------------------------------------\n"
+    str = str + "---------------------------------------------------------------------------------------\n"
 
 # Get Changes Adhs Pros
 filename = o2c.getChangesAdhPros()
@@ -60,5 +60,6 @@ msg['To'] = "groche@guigeek.org"
 
 # Send the message via our own SMTP server.
 s = smtplib.SMTP(smtp)
-s.send_message(msg)
+if (str != ""): 
+    s.send_message(msg)
 s.quit()
