@@ -376,7 +376,12 @@ class Odoo2Cyclos:
                         if (changes['type'] == "modify"):
                             #print("modify "+k)
                             data = self.cyclos.getUserDateForEdit(k)
-                            data['user'][changes['field']] = changes['newvalue']
+                            if (changes['field'] == 'DateFinAdhesion'):
+                                data['user']['customValues']['DateFinAdhesion'] = changes['newvalue']
+                            elif (changes['field'] == 'Num_adherent_part'):
+                                data['user']['customValues']['Num_adherent_part'] = changes['newvalue']
+                            else:
+                                data['user'][changes['field']] = changes['newvalue']
                             #data={changes['field']: changes['newvalue']}
                             #data={"name": changes['newvalue'], "username": k, "email": k}
                             self.cyclos.putUser(k, data['user'])
