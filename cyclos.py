@@ -51,6 +51,33 @@ class Cyclos:
             cyclosLogger.debug(LOG_HEADER + resp.text)
         return json.loads(resp.text)
 
+    def getAccount(self, id):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'getAccount/'+id)
+        resp = requests.get(self.url+'/'+id+'/accounts/', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
+
+    def getBalances(self):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'getBalances')
+        resp = requests.get(self.url+'/accounts/data-for-user-balances', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
+
+    def getUserBalancesSummary(self,id):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'getUserBalancesSummary/'+id)
+        resp = requests.get(self.url+'/accounts/'+id+'/user-balances/summary?statuses=active&statuses=blocked&statuses=disabled&statuses=pending&statuses=purged&statuses=removed', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
+
     def getUserDateForEdit(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getUserDateForEdit/'+user)
         resp = requests.get(self.url+'/users/'+user+'/data-for-edit-profile', auth=HTTPBasicAuth(self.user, self.password), verify=False)
