@@ -21,12 +21,13 @@ def checkBalancesCyclos(cyclos):
     #print(totalinv)
     sold = float(totalinv)+float(total)
     if (sold != 0):
-        print("ERREUR")
+        print("ERREUR CRITIQUE")
         print("Total des soldes des comptes : "+str(total))
         print("Solde du compte de débit : "+str(totalinv))
     else:
         print("Total des soldes des comptes : "+str(total))
         print("Solde du compte de débit : "+str(totalinv))
+    return float(totalinv)
 
 def checkPaimentsMollie(mollie):
     total=0
@@ -36,8 +37,14 @@ def checkPaimentsMollie(mollie):
             if (payment['status'] == "paid"):
                 total=total+float(payment['amount']['value'])
     print("Total Change via Mollie :"+str(total))
+    return total
 
 cyclos = Cyclos()
-checkBalancesCyclos(cyclos)
+totalCyclos = checkBalancesCyclos(cyclos)
 mo = Mollie()
-checkPaimentsMollie(mo)
+totolMollie = checkPaimentsMollie(mo)
+if (abs(totalCyclos) == abs(totolMollie)):
+    print ("OK")
+else:
+    diff = abs(totalCyclos)-abs(totolMollie)
+    print ("ERREUR : "+str(diff))
