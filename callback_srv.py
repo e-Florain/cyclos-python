@@ -71,7 +71,7 @@ def changeCyclos(argkey):
                     o2c.applyChangesAdhPros(value)
                 else:
                     webLogger.info(LOG_HEADER + 'o2c apply adhs '+value)
-                    #o2c.applyChangesAdhs(value)
+                    o2c.applyChangesAdhs(value)
                 print("OK - "+value)
                 # todo : apply json
                 # todo : delete filename from json
