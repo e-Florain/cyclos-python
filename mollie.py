@@ -39,9 +39,10 @@ class Mollie:
         #print(listtransactions)
         return listtransactions
 
-    def get_payments(self):
+    def get_all_payments(self):
+        list_payments = []
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
-        url = cfg.mollie['url']+'/payments'
+        url = cfg.mollie['url']+'/payments?limit=150'
         params = {}
         try:
             resp = requests.get(url, params=params, headers=headers)
@@ -56,7 +57,61 @@ class Mollie:
             paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
             exit
         result = json.loads(resp.text)
-        return result['_embedded']['payments']
+        list_payments = result['_embedded']['payments']
+        while (result['_links']['next'] is not None):
+            try:
+                resp = requests.get(result['_links']['next']['href'], params=params, headers=headers)
+            except requests.exceptions.Timeout:
+                paiementLogger.error(LOG_HEADER + '[-] Timeout')
+            except requests.exceptions.TooManyRedirects:
+                paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+            except requests.exceptions.RequestException as e:
+                paiementLogger.error(LOG_HEADER + '[-] Exception')
+                raise SystemExit(e)
+            if (resp.status_code != 200):
+                paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+                exit
+            result = json.loads(resp.text)
+            list_payments = list_payments + result['_embedded']['payments']
+            #print(len(list_payments))
+        return list_payments
+
+    def get_payments(self, limit):
+        list_payments = []
+        headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
+        url = cfg.mollie['url']+'/payments?limit=150'
+        params = {}
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != 200):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+            exit
+        result = json.loads(resp.text)
+        list_payments = result['_embedded']['payments']
+        while ((result['_links']['next'] is not None) and (len(list_payments) < limit)):
+            try:
+                resp = requests.get(result['_links']['next']['href'], params=params, headers=headers)
+            except requests.exceptions.Timeout:
+                paiementLogger.error(LOG_HEADER + '[-] Timeout')
+            except requests.exceptions.TooManyRedirects:
+                paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+            except requests.exceptions.RequestException as e:
+                paiementLogger.error(LOG_HEADER + '[-] Exception')
+                raise SystemExit(e)
+            if (resp.status_code != 200):
+                paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+                exit
+            result = json.loads(resp.text)
+            list_payments = list_payments + result['_embedded']['payments']
+            #print(len(list_payments))
+        return list_payments
 
     def get_users(self):
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
@@ -102,7 +157,7 @@ class Mollie:
         cyclos = Cyclos()
         msglog = LOG_HEADER + '[-] '
         listtransactions = self.get_old_payments()
-        payments = self.get_payments()
+        payments = self.get_payments(500)
         for payment in payments:
             #paiementLogger.info(msglog + json.dumps(payment, indent=4, sort_keys=True))
             #self.display_json(payment)
