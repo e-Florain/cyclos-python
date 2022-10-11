@@ -248,7 +248,7 @@ class Cyclos:
             cyclosLogger.debug(LOG_HEADER + resp.text)
 
     def setPaymentSystemtoUser(self, accountID, amount, description):
-        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+accountID+'/'+str(amount)+'/'+description)
+        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentSystemtoUser/'+str(accountID)+'/'+str(amount)+'/'+description)
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         #id = self.getIdFromEmail(email)
         data = {'amount': amount, 'subject': accountID, 'type': 'debit.toUser', 'description': description}      
@@ -267,6 +267,7 @@ class Cyclos:
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
 
     def getAddresses(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getAddresses/'+user)
@@ -296,6 +297,15 @@ class Cyclos:
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
             cyclosLogger.debug(LOG_HEADER + resp.text)
+
+    def getTransactions(self, user):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'getTransactions/'+user)
+        resp = requests.get(self.url+'/'+user+'/transactions', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        return json.loads(resp.text)
 
     def getTransfers(self):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getTransfers')
