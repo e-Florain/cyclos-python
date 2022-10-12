@@ -79,14 +79,15 @@ def checkPaimentsMollie(mollie):
 @app.route('/')
 def getPaiements():
     webLogger.info(LOG_HEADER + '[/] GET')
-    with FileLock("myfile.txt"):
+    with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile.txt"):
+        time.sleep(20000)
         mo.setTransactionstoCyclos()
         return '200'
 
 @app.route('/', methods=['POST'])
 def postPaiements():
     webLogger.info(LOG_HEADER + '[/] POST')
-    with FileLock("myfile.txt"):
+    with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile.txt"):
         mo.setTransactionstoCyclos()
         return '200'
 
@@ -101,23 +102,25 @@ def paiement():
 
 @app.route('/allow/<string:argkey>')
 def changeCyclos(argkey):
-    webLogger.info(LOG_HEADER + '[/allow/'+argkey+'] GET')
-    with open(os.path.dirname(os.path.abspath(__file__))+"/url.key") as keysjsons:
-        arr = json.loads(keysjsons.read())
-        for key, value in arr.items():
-            #print(key+" "+value)
-            if (argkey == key):
-                if (re.match('\d{8}-\d{6}-adhpros-changes\.json', value) is not None):
-                    webLogger.info(LOG_HEADER + 'o2c apply adhpros '+value)
-                    print('o2c apply adhpros '+value)
-                    o2c.applyChangesAdhPros(value)
+    with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile2.txt"):
+        newarr = {}
+        webLogger.info(LOG_HEADER + '[/allow/'+argkey+'] GET')
+        with open(os.path.dirname(os.path.abspath(__file__))+"/url.key") as keysjsons:
+            arr = json.loads(keysjsons.read())
+            for key, value in arr.items():
+                #print(key+" "+value)
+                if (argkey == key):
+                    if (re.match('\d{8}-\d{6}-adhpros-changes\.json', value) is not None):
+                        webLogger.info(LOG_HEADER + 'o2c apply adhpros '+value)
+                        #o2c.applyChangesAdhPros(value)
+                    else:
+                        webLogger.info(LOG_HEADER + 'o2c apply adhs '+value)
+                        #o2c.applyChangesAdhs(value)
                 else:
-                    webLogger.info(LOG_HEADER + 'o2c apply adhs '+value)
-                    o2c.applyChangesAdhs(value)
-                print("OK - "+value)
-                # todo : apply json
-                # todo : delete filename from json
-                return "200"
+                    newarr[key] = value
+            with open(os.path.dirname(os.path.abspath(__file__))+'/url.key', 'w') as outfile:
+                json.dump(newarr, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+            return "200"
     return "503"
 
 @app.route('/monitor')
