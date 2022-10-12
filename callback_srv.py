@@ -16,6 +16,7 @@ import time, signal
 from cherrypy import wsgiserver
 from filelock import FileLock
 from mollie import Mollie
+from cyclos import Cyclos
 from Odoo2Cyclos import Odoo2Cyclos
 
 LOG_HEADER = " [" + __file__ + "] - "
@@ -32,7 +33,48 @@ webLogger.addHandler(fileHandler)
 
 app = Flask(__name__)
 mo = Mollie()
+cyclos = Cyclos()
 o2c = Odoo2Cyclos()
+
+def checkBalancesCyclos(cyclos):
+    #info = cyclos.getBalances()
+    #pprint(info['accountTypes'])
+    total = 0
+    info = cyclos.getUserBalancesSummary("user")
+    total = total+float(info['total']['sum'])
+    info = cyclos.getUserBalancesSummary("comptePro")
+    total = total+float(info['total']['sum'])
+    info = cyclos.getUserBalancesSummary("system")
+    #print(total)
+    info = cyclos.getAccount('system')
+    totalinv = info[0]['status']['balance']
+
+    #get payments system
+    listpayments = cyclos.getTransactions('system')
+    #print(listpayments)
+    totalreconversion = 0
+    for payment in listpayments:
+        if (payment['type']['internalName'] == 'debit.toPro'):
+            if (payment['related']['user']['display'] != 'Le Florain'):
+                totalreconversion = totalreconversion +float(payment['amount'])
+    sold = float(totalinv)+float(total)
+    if (sold != 0):
+        webLogger.info(LOG_HEADER + '[checkBalancesCyclos] ERREUR CRITIQUE '+str(total)+' '+str(totalinv))
+        #webLogger.info(LOG_HEADER + '[/monitor] GET')
+        #print("Total des soldes des comptes : "+str(total))
+        #print("Solde du compte de débit : "+str(totalinv))
+    totalinv = float(totalinv) - totalreconversion
+    return float(totalinv)
+
+def checkPaimentsMollie(mollie):
+    total=0
+    list_payments = mollie.get_payments(500)
+    for payment in list_payments:
+        if (re.match('Change', payment['description']) is not None):
+            if (payment['status'] == "paid"):
+                total=total+float(payment['amount']['value'])
+    #print("Total Change via Mollie :"
+    return total
 
 @app.route('/')
 def getPaiements():
@@ -77,6 +119,17 @@ def changeCyclos(argkey):
                 # todo : delete filename from json
                 return "200"
     return "503"
+
+@app.route('/monitor')
+def monitor():
+    webLogger.info(LOG_HEADER + '[/monitor] GET')
+    totalCyclos = checkBalancesCyclos(cyclos)
+    totolMollie = checkPaimentsMollie(mo)
+    if (abs(totalCyclos) == abs(totolMollie)):
+        return ("OK")
+    else:
+        diff = abs(totalCyclos)-abs(totolMollie)
+        return ("ERREUR : "+str(diff))
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 80), d)
