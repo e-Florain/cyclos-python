@@ -300,7 +300,7 @@ class Cyclos:
 
     def getTransactions(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getTransactions/'+user)
-        resp = requests.get(self.url+'/'+user+'/transactions', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        resp = requests.get(self.url+'/'+user+'/transactions?pageSize=1000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):
