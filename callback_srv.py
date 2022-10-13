@@ -112,10 +112,10 @@ def changeCyclos(argkey):
                 if (argkey == key):
                     if (re.match('\d{8}-\d{6}-adhpros-changes\.json', value) is not None):
                         webLogger.info(LOG_HEADER + 'o2c apply adhpros '+value)
-                        #o2c.applyChangesAdhPros(value)
+                        o2c.applyChangesAdhPros(value)
                     else:
                         webLogger.info(LOG_HEADER + 'o2c apply adhs '+value)
-                        #o2c.applyChangesAdhs(value)
+                        o2c.applyChangesAdhs(value)
                 else:
                     newarr[key] = value
             with open(os.path.dirname(os.path.abspath(__file__))+'/url.key', 'w') as outfile:
