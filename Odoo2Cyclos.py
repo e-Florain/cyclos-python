@@ -159,13 +159,20 @@ class Odoo2Cyclos:
                     #if (v['email']) == "null":
                     #    next;
                     infostocreate['email'] = v['email']
+                    # DateFinAdhesion
                     res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
                     if (res != None):
                         date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
                         infostocreate['DateFinAdhesion'] = date_object.strftime("%Y-%m-%d")
                     else:
                         infostocreate['DateFinAdhesion'] = ""
+                    # Num_adherent_part
                     infostocreate['Num_adherent_part'] = v['ref']
+                    # changeeuros
+                    res = re.match('\d+\.\d{2}', str(v["changeeuros"]))
+                    if (res != None):
+                        infostocreate['changeeuros'] = v['changeeuros']
+
                     #infostocreate['adh_id'] = v['adh_id']
                     infostocreate['name'] = firstname_unaccented+" "+lastname_unaccented
                     changes['infos'] = infostocreate
@@ -182,6 +189,7 @@ class Odoo2Cyclos:
                         name = firstname_unaccented+" "+lastname_unaccented
                         if (name != unidecode.unidecode(listUsersCyclos[k]["display"])):
                             #print (listUsersCyclos[k]["display"])
+                            changes = dict()
                             changes['field'] = 'display'
                             changes['newvalue'] = name
                             changes['oldvalue'] = unidecode.unidecode(listUsersCyclos[k]["display"])
@@ -198,6 +206,7 @@ class Odoo2Cyclos:
                                 datefinadh = date_object.strftime("%Y-%m-%d")
                             else:
                                 datefinadh = ""
+                            changes = dict()
                             changes['field'] = 'DateFinAdhesion'
                             changes['newvalue'] = datefinadh
                             changes['oldvalue'] = ""
@@ -206,6 +215,7 @@ class Odoo2Cyclos:
                             changed = True
                             listchanges.append(changes)
                             # Num_adherent_part
+                            changes = dict()
                             changes['field'] = 'Num_adherent_part'
                             changes['newvalue'] = v['ref']
                             changes['oldvalue'] = ""
@@ -213,15 +223,31 @@ class Odoo2Cyclos:
                             changes['dbtochange'] = 'cyclos'
                             changed = True
                             listchanges.append(changes)
+                            res = re.match('\d+\.\d{2}', str(v["changeeuros"]))
+                            if (res != None):
+                                changes = dict()
+                                changes['field'] = 'changeeuros'
+                                changes['newvalue'] = v['changeeuros']
+                                changes['oldvalue'] = ""
+                                changes['type'] = 'modify'
+                                changes['dbtochange'] = 'cyclos'
+                                changed = True
+                                listchanges.append(changes)
                         else:
+                            list_found=dict()
+                            list_found['DateFinAdhesion'] = False
+                            list_found['Num_adherent_part'] = False
+                            list_found['changeeuros'] = False
                             for customvalue in listUsersCyclos[k]['customValues']:
                                 if (customvalue['field']['internalName'] == "DateFinAdhesion"):
+                                    list_found['DateFinAdhesion'] = True
                                     res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
                                     if (res != None):
                                         date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
                                         datefinadh = date_object.strftime("%Y-%m-%d")
                                         res2 = re.match('^'+datefinadh, customvalue['dateValue'])
                                         if (res2 == None):
+                                            changes = dict()
                                             changes['field'] = 'DateFinAdhesion'
                                             changes['newvalue'] = datefinadh
                                             changes['oldvalue'] = customvalue['dateValue']
@@ -231,7 +257,9 @@ class Odoo2Cyclos:
                                             changed = True
                                             listchanges.append(changes)
                                 if (customvalue['field']['internalName'] == "Num_adherent_part"):
+                                    list_found['Num_adherent_part'] = True
                                     if (customvalue['integerValue'] != int(v['ref'])):
+                                        changes = dict()
                                         changes['field'] = 'Num_adherent_part'  
                                         changes['newvalue'] = int(v['ref'])
                                         changes['oldvalue'] = customvalue['integerValue']
@@ -240,6 +268,56 @@ class Odoo2Cyclos:
                                         changes['dbtochange'] = 'cyclos'
                                         changed = True
                                         listchanges.append(changes)
+                                if (customvalue['field']['internalName'] == "changeeuros"):
+                                    list_found['changeeuros'] = True
+                                    res = re.match('\d+\.\d{2}', str(v["changeeuros"]))
+                                    if (res != None):
+                                        if (float(customvalue['decimalValue']) != float(v['changeeuros'])):
+                                            changes = dict()
+                                            changes['field'] = 'changeeuros'  
+                                            changes['newvalue'] = float(v['changeeuros'])
+                                            changes['oldvalue'] = float(customvalue['decimalValue'])
+                                            changes['type'] = 'modify'
+                                            # A changer par la suite avec la date de modification
+                                            changes['dbtochange'] = 'cyclos'
+                                            changed = True
+                                            listchanges.append(changes)
+                            if (list_found['DateFinAdhesion'] == False):
+                                res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                                if (res != None):
+                                    date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                                    datefinadh = date_object.strftime("%Y-%m-%d")
+                                    changes = dict()
+                                    changes['field'] = 'DateFinAdhesion'
+                                    changes['newvalue'] = datefinadh
+                                    changes['oldvalue'] = ""
+                                    changes['type'] = 'modify'
+                                    # A changer par la suite avec la date de modification
+                                    changes['dbtochange'] = 'cyclos'
+                                    changed = True
+                                    listchanges.append(changes)
+                            if (list_found['Num_adherent_part'] == False):
+                                changes = dict()
+                                changes['field'] = 'Num_adherent_part'  
+                                changes['newvalue'] = int(v['ref'])
+                                changes['oldvalue'] = ""
+                                changes['type'] = 'modify'
+                                # A changer par la suite avec la date de modification
+                                changes['dbtochange'] = 'cyclos'
+                                changed = True
+                                listchanges.append(changes)
+                            if (list_found['changeeuros'] == False):
+                                res = re.match('\d+\.\d{2}', str(v["changeeuros"]))
+                                if (res != None):
+                                    changes = dict()
+                                    changes['field'] = 'changeeuros'  
+                                    changes['newvalue'] = float(v['changeeuros'])
+                                    changes['oldvalue'] = ""
+                                    changes['type'] = 'modify'
+                                    # A changer par la suite avec la date de modification
+                                    changes['dbtochange'] = 'cyclos'
+                                    changed = True
+                                    listchanges.append(changes)
                         if (changed):
                             changesDB[k] = listchanges
         #print(changesDB)
@@ -381,7 +459,7 @@ class Odoo2Cyclos:
                             elif (changes['field'] == 'Num_adherent_part'):
                                 data['user']['customValues']['Num_adherent_part'] = changes['newvalue']
                             else:
-                                data['user'][changes['field']] = changes['newvalue']
+                                data['user']['customValues'][changes['field']] = changes['newvalue']
                             #data={changes['field']: changes['newvalue']}
                             #data={"name": changes['newvalue'], "username": k, "email": k}
                             self.cyclos.putUser(k, data['user'])
