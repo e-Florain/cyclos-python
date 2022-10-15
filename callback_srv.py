@@ -80,7 +80,7 @@ def checkPaimentsMollie(mollie):
 def getPaiements():
     webLogger.info(LOG_HEADER + '[/] GET')
     with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile.txt"):
-        time.sleep(20000)
+        #time.sleep(20000)
         mo.setTransactionstoCyclos()
         return '200'
 
@@ -96,7 +96,7 @@ def paiement():
     webLogger.info(LOG_HEADER + '[/paiement] POST')
     data = request.form.to_dict()
     #print(data, request, type(request))
-    with FileLock("myfile.txt"):
+    with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile.txt"):
         mo.setTransactionstoCyclos()
         return '200'
 
