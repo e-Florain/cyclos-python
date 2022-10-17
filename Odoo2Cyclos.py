@@ -311,7 +311,7 @@ class Odoo2Cyclos:
                                 if (res != None):
                                     changes = dict()
                                     changes['field'] = 'changeeuros'  
-                                    changes['newvalue'] = float(v['changeeuros'])
+                                    changes['newvalue'] = str(v['changeeuros'])
                                     changes['oldvalue'] = ""
                                     changes['type'] = 'modify'
                                     # A changer par la suite avec la date de modification
