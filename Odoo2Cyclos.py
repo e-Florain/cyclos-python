@@ -275,7 +275,7 @@ class Odoo2Cyclos:
                                         if (float(customvalue['decimalValue']) != float(v['changeeuros'])):
                                             changes = dict()
                                             changes['field'] = 'changeeuros'  
-                                            changes['newvalue'] = float(v['changeeuros'])
+                                            changes['newvalue'] = str(v['changeeuros'])
                                             changes['oldvalue'] = float(customvalue['decimalValue'])
                                             changes['type'] = 'modify'
                                             # A changer par la suite avec la date de modification
