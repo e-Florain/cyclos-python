@@ -5,8 +5,12 @@ import re
 from cyclos import Cyclos
 from mollie import Mollie
 from pprint import pprint
+import smtplib
+from email.message import EmailMessage
+import config as cfg
 
-def checkBalancesCyclos(cyclos):
+
+def checkBalancesCyclos(cyclos, strmsg):
     #info = cyclos.getBalances()
     #pprint(info['accountTypes'])
     total = 0
@@ -29,31 +33,42 @@ def checkBalancesCyclos(cyclos):
                 totalreconversion = totalreconversion +float(payment['amount'])
     sold = float(totalinv)+float(total)
     if (sold != 0):
-        print("ERREUR CRITIQUE")
-        print("Total des soldes des comptes : "+str(total))
-        print("Solde du compte de débit : "+str(totalinv))
+        strmsg+="ERREUR CRITIQUE"+"\n"
+        strmsg+="Total des soldes des comptes : "+str(total)+"\n"
+        strmsg+="Solde du compte de débit : "+str(totalinv)+"\n"
     else:
-        print("Total des soldes des comptes : "+str(total))
-        print("Solde du compte de débit : "+str(totalinv))
+        strmsg+="Total des soldes des comptes : "+str(total)+"\n"
+        strmsg+="Solde du compte de débit : "+str(totalinv)+"\n"
     totalinv = float(totalinv) - totalreconversion
-    return float(totalinv)
+    return float(totalinv),strmsg
 
-def checkPaimentsMollie(mollie):
+def checkPaimentsMollie(mollie, strmsg):
     total=0
     list_payments = mollie.get_all_payments()
     for payment in list_payments:
         if (re.match('Change', payment['description']) is not None):
             if (payment['status'] == "paid"):
                 total=total+float(payment['amount']['value'])
-    print("Total Change via Mollie :"+str(total))
-    return total
+    strmsg+="Total Change via Mollie :"+str(total)+"\n"
+    return total,strmsg
 
+smtp = cfg.smtp['ip']
+msg = EmailMessage()
 cyclos = Cyclos()
-totalCyclos = checkBalancesCyclos(cyclos)
+strmsg = ""
+totalCyclos, strmsg = checkBalancesCyclos(cyclos, strmsg)
 mo = Mollie()
-totolMollie = checkPaimentsMollie(mo)
-if (abs(totalCyclos) == abs(totolMollie)):
-    print ("OK")
-else:
+totolMollie, strmsg = checkPaimentsMollie(mo, strmsg)
+if (abs(totalCyclos) != abs(totolMollie)):
     diff = abs(totalCyclos)-abs(totolMollie)
-    print ("ERREUR : "+str(diff))
+    strmsg+="ERREUR - Différence de "+str(diff)
+    msg.set_content(strmsg)
+    msg['Subject'] = f'ATTENTION Erreur de balance'
+    msg['From'] = "no-reply@eflorain.fr"
+    #msg['To'] = "tech@florain.fr"
+    msg['To'] = "groche@guigeek.org"
+    #print(strmsg)
+    if (strmsg != ""):
+        s = smtplib.SMTP(smtp)
+        s.send_message(msg)
+        s.quit()
