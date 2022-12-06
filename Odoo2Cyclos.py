@@ -98,6 +98,14 @@ class Odoo2Cyclos:
         #print(resp.text)
         return json.loads(resp.text)
 
+    def postOdooAdhMembership(self, email, name, amount):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'postOdooAdhMembership')
+        headers = {'x-api-key': self.key, 'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {'email': email, 'name': name, 'amount': amount}
+        resp = requests.post(self.url+'/postMembership', headers=headers, verify=False, data=json.dumps(data))
+        #print(resp.text)
+        return json.loads(resp.text)
+
     def syncAdhs(self, cyclos):
         """ Sync Adhs """
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'Sync adhs ...')

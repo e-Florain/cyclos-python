@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import config as cfg
 import cyclos
 from cyclos import Cyclos
+from Odoo2Cyclos import Odoo2Cyclos
 
 LOG_HEADER = " [" + __file__ + "] - "
 LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + '/log/'
@@ -210,6 +211,70 @@ class Mollie:
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
+    def get_old_adhesions(self):
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions']) as data_file:
+            listadhesions = json.load(data_file)
+        return listadhesions
+
+    def checkAdhesion(self):
+        o2c = Odoo2Cyclos()
+        listadhesions = self.get_old_adhesions()
+        #print(listadhesions)
+        payments = self.get_payments(50)
+        for payment in payments:
+            res = {}
+            if (payment['id'] not in listadhesions):
+                if (re.match("^Adhésion Florain Mensuelle", payment['description']) != None):
+                    if 'paidAt' in payment:
+                        infoscustomer = self.get_user(payment['customerId'])
+                        listadhs = o2c.getOdooAdhs()
+                        for adh in listadhs:
+                            if (adh['email'] == infoscustomer['email']):
+                                if ((adh['membership_state'] != "paid") and 
+                                (adh['membership_state'] != "waiting") and 
+                                (adh['membership_state'] != "invoiced")):
+                                    print(infoscustomer['email'])
+                                    print(payment['details']['consumerName'])
+                                    tmp = {
+                                        'date': payment['paidAt'],
+                                        'orderid': payment['id'],
+                                        'email': infoscustomer['email'],
+                                        'name': payment['details']['consumerName'],
+                                        'state': payment['status'],
+                                        'description': payment['description'],
+                                        'method': payment['method'],
+                                        'amount': payment['amount']['value']
+                                    }
+                                    #o2c.postOdooAdhMembership(infoscustomer['email'], payment['details']['consumerName'], payment['amount']['value'])
+                                    listadhesions[payment['id']] = tmp
+                                break
+                if (re.match("^Adhésion Florain Annuelle", payment['description']) != None):
+                    if 'paidAt' in payment:
+                        infoscustomer = self.get_user(payment['customerId'])
+                        listadhs = o2c.getOdooAdhs()
+                        for adh in listadhs:
+                            if (adh['email'] == infoscustomer['email']):
+                                if ((adh['membership_state'] != "paid") and 
+                                (adh['membership_state'] != "waiting") and 
+                                (adh['membership_state'] != "invoiced")):
+                                    print(infoscustomer['email'])
+                                    print(payment['details']['consumerName'])
+                                    tmp = {
+                                        'date': payment['paidAt'],
+                                        'orderid': payment['id'],
+                                        'email': infoscustomer['email'],
+                                        'name': payment['details']['consumerName'],
+                                        'state': payment['status'],
+                                        'description': payment['description'],
+                                        'method': payment['method'],
+                                        'amount': payment['amount']['value']
+                                    }
+                                    #o2c.postOdooAdhMembership(infoscustomer['email'], payment['details']['consumerName'], payment['amount']['value'])
+                                    listadhesions[payment['id']] = tmp
+                                break
+
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions'], 'w') as outfile:
+            json.dump(listadhesions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
     def display_json(self, arr):
         print(json.dumps(arr, indent=4, sort_keys=True))
