@@ -40,7 +40,7 @@ def checkBalancesCyclos(cyclos):
 
 def checkPaimentsMollie(mollie):
     total=0
-    list_payments = mollie.get_payments()
+    list_payments = mollie.get_all_payments()
     for payment in list_payments:
         if (re.match('Change', payment['description']) is not None):
             if (payment['status'] == "paid"):
