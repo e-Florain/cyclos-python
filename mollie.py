@@ -8,6 +8,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
+import datetime
 import config as cfg
 import cyclos
 from cyclos import Cyclos
@@ -211,7 +212,59 @@ class Mollie:
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
-    def get_old_adhesions(self):
+    def checkPaiementAdhMollie(self):
+        resultsAdhMensuelle={}
+        resultsAdhAnnuelle={}
+        payments = self.get_payments(500)
+        for payment in payments:
+            adhval = 0
+            if (re.match('Adhésion Florain Mensuelle', payment['description']) is not None):
+                if (payment['status'] == "paid"):
+                    adhval=float(payment['amount']['value'])
+                    infoscustomer = self.get_user(payment['customerId'])
+                    resultsAdhMensuelle[infoscustomer['email']] = {}
+                    resultsAdhMensuelle[infoscustomer['email']]['date'] = payment['paidAt']
+                    resultsAdhMensuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
+                    #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
+            if (re.match('Adhésion Florain Annuelle', payment['description']) is not None):
+                if (payment['status'] == "paid"):
+                    adhval=float(payment['amount']['value'])
+                    infoscustomer = self.get_user(payment['customerId'])
+                    resultsAdhAnnuelle[infoscustomer['email']] = {}
+                    resultsAdhAnnuelle[infoscustomer['email']]['date'] = payment['paidAt']
+                    resultsAdhAnnuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
+                    #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
+        results={}
+        results['AdhMensuelle'] = resultsAdhMensuelle
+        results['AdhAnnuelle'] = resultsAdhAnnuelle
+        self.checkOdooAdhExpires(results)
+
+    def checkOdooAdhExpires(self, resultsMollie):
+        o2c = Odoo2Cyclos()
+        listadhs = o2c.getOdooAdhs()
+        datetoday = datetime.datetime.now()
+        for adh in listadhs:
+            if (adh['account_cyclos'] == True):
+                if ((adh['membership_stop'] is not None) and (adh['membership_stop'] != "none")):
+                    m = re.search('(\d{2}\s+\w+\s+\d{4})', adh['membership_stop'])
+                    if (m is not None):
+                        dateadh = datetime.datetime.strptime(m.group(1), '%d %b %Y')
+                        if (datetoday >= dateadh):
+                            #print(adh)
+                            #print(dateadh.isoformat())
+                            #print(adh['email'])
+                            if (adh['email'] in resultsMollie['AdhMensuelle']):
+                                print(adh['email']+" MENSUELLE "+resultsMollie['AdhMensuelle'][adh['email']]['date'])
+                            elif (adh['email'] in resultsMollie['AdhAnnuelle']):
+                                #o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
+                            else:
+                                print(adh['email']+" NONE")
+
+    def display_json(self, arr):
+        print(json.dumps(arr, indent=4, sort_keys=True))
+
+"""     def get_old_adhesions(self):
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions']) as data_file:
             listadhesions = json.load(data_file)
         return listadhesions
@@ -274,7 +327,4 @@ class Mollie:
                                 break
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions'], 'w') as outfile:
-            json.dump(listadhesions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
-
-    def display_json(self, arr):
-        print(json.dumps(arr, indent=4, sort_keys=True))
+            json.dump(listadhesions, outfile, indent=4, sort_keys=False, separators=(',', ':')) """
