@@ -28,9 +28,14 @@ def checkBalancesCyclos(cyclos, strmsg):
     #print(listpayments)
     totalreconversion = 0
     for payment in listpayments:
+	# Reconversion papiers vers numérique
         if (payment['type']['internalName'] == 'debit.toPro'):
             if (payment['related']['user']['display'] != 'Le Florain'):
-                totalreconversion = totalreconversion +float(payment['amount'])
+                totalreconversion = totalreconversion + float(payment['amount'])
+	# Reconversion numérique vers euros
+        if (payment['type']['internalName'] == 'comptePro.toDebit'):
+            totalreconversion = totalreconversion + float(payment['amount'])
+    #print(totalreconversion)
     sold = float(totalinv)+float(total)
     if (sold != 0):
         strmsg+="ERREUR CRITIQUE"+"\n"
@@ -63,10 +68,11 @@ if (abs(totalCyclos) != abs(totolMollie)):
     diff = abs(totalCyclos)-abs(totolMollie)
     strmsg+="ERREUR - Différence de "+str(diff)
     msg.set_content(strmsg)
+    print(strmsg)
     msg['Subject'] = f'ATTENTION Erreur de balance'
     msg['From'] = "no-reply@eflorain.fr"
-    #msg['To'] = "tech@florain.fr"
-    msg['To'] = "groche@guigeek.org"
+    msg['To'] = "tech@florain.fr"
+    #msg['To'] = "groche@guigeek.org"
     #print(strmsg)
     if (strmsg != ""):
         s = smtplib.SMTP(smtp)

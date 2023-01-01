@@ -54,9 +54,13 @@ def checkBalancesCyclos(cyclos):
     #print(listpayments)
     totalreconversion = 0
     for payment in listpayments:
+        # Reconversion papiers vers numérique
         if (payment['type']['internalName'] == 'debit.toPro'):
             if (payment['related']['user']['display'] != 'Le Florain'):
                 totalreconversion = totalreconversion +float(payment['amount'])
+        # Reconversion numérique vers euros
+        if (payment['type']['internalName'] == 'comptePro.toDebit'):
+            totalreconversion = totalreconversion + float(payment['amount'])
     sold = float(totalinv)+float(total)
     if (sold != 0):
         webLogger.info(LOG_HEADER + '[checkBalancesCyclos] ERREUR CRITIQUE '+str(total)+' '+str(totalinv))
