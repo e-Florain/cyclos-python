@@ -415,13 +415,13 @@ class Odoo2Cyclos:
             for k, v in datas.items():
                 for changes in v:
                     if (changes['dbtochange'] == "cyclos"):
-                        """if (changes['type'] == "delete"):
-                            print("delete "+k)
+                        if (changes['type'] == "delete"):
+                            odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'delete '+k)
                             id = self.cyclos.getIdFromEmail(k)
                             if (id == False):
                                 odoo2cyclosLogger.info(LOG_HEADER + '[-] impossible de trouver '+k)
                             else:
-                                self.cyclos.disableUser(id)"""
+                                self.cyclos.disableUser(id)
                         """if (changes['type'] == "modify"):
                             print("modify "+k)
                             #id = cyclos.getIdFromEmail(k)
