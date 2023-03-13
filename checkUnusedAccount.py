@@ -27,6 +27,9 @@ for user in allusers:
             #print(user['email']+" "+user['lastLogin'])
             str = str + user['email']+" "+user['lastLogin']
             str = str + "\n"
+    else:
+        str = str + user['email']+" "+user['lastLogin']
+        str = str + "\n"
 
 msg.set_content(str)
 msg['Subject'] = f'Comptes non utilisés depuis longtemps'
