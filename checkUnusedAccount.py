@@ -28,7 +28,7 @@ for user in allusers:
             str = str + user['email']+" "+user['lastLogin']
             str = str + "\n"
     else:
-        str = str + user['email']+" "+user['lastLogin']
+        str = str + user['email']+" : Aucune connexion"
         str = str + "\n"
 
 msg.set_content(str)
