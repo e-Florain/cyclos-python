@@ -51,6 +51,30 @@ class Cyclos:
             cyclosLogger.debug(LOG_HEADER + resp.text)
         return json.loads(resp.text)
 
+    def sendMessagetoUser(self, user, body, subject):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'sendMessagetoUser/'+user)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        #id = self.getIdFromEmail(user)
+        #data = {'toUsers': [id], 'body': 'test', 'subject': 'test'}
+        data = {'toUsers': [user], 'body': body, 'subject': subject, 'category': 'General', 'destination': 'user'}
+        resp = requests.post(self.url+'/messages', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        self.displayJson(resp.text)
+
+    def sendMessagetoGroup(self, group, body, subject):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'sendMessagetoGroup/'+group)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data = {'toGroups': [group], 'body': body, 'subject': subject, 'category': 'General', 'destination': 'group'}
+        resp = requests.post(self.url+'/messages', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        self.displayJson(resp.text)
+
     def getAccount(self, id):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getAccount/'+id)
         resp = requests.get(self.url+'/'+id+'/accounts/', auth=HTTPBasicAuth(self.user, self.password), verify=False)
