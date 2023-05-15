@@ -94,7 +94,7 @@ class Odoo2Cyclos:
     def getOdooAdhpros(self, params={}):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getOdooAdhpros')
         headers = {'x-api-key': self.key, 'Content-type': 'application/json', 'Accept': 'text/plain'}
-        resp = requests.get(self.url+'/getAdhpros', headers=headers, verify=False)
+        resp = requests.get(self.url+'/getAdhpros', params=params, headers=headers, verify=False)
         #print(resp.text)
         return json.loads(resp.text)
 
