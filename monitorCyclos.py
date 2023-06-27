@@ -2,13 +2,26 @@
 # -*- coding: utf-8 -*-
 import cyclos
 import re
+import logging
+import os
 from cyclos import Cyclos
 from mollie import Mollie
 from pprint import pprint
 import smtplib
+from logging.handlers import RotatingFileHandler
 from email.message import EmailMessage
 import config as cfg
 
+LOG_HEADER = " [" + __file__ + "] - "
+LOG_PATH = os.path.dirname(os.path.abspath(__file__)) + '/log/'
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+monitorLogger = logging.getLogger('monitor')
+monitorLogger.setLevel(logging.DEBUG)
+monitorLogger.propagate = False
+fileHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'monitor'), maxBytes=2000000,
+                                  backupCount=1500)
+fileHandler.setFormatter(logFormatter)
+monitorLogger.addHandler(fileHandler)
 
 def checkBalancesCyclos(cyclos, strmsg):
     #info = cyclos.getBalances()
@@ -21,21 +34,24 @@ def checkBalancesCyclos(cyclos, strmsg):
     info = cyclos.getUserBalancesSummary("system")
     #print(total)
     info = cyclos.getAccount('system')
-    totalinv = info[0]['status']['balance']
+    totalinv = float(info[0]['status']['balance'])
 
     #get payments system
     listpayments = cyclos.getTransactions('system')
     #print(listpayments)
     totalreconversion = 0
+    totalreconversion = 0
     for payment in listpayments:
-	# Reconversion papiers vers numérique
+        # Reconversion papiers vers numérique
         if (payment['type']['internalName'] == 'debit.toPro'):
-            if (payment['related']['user']['display'] != 'Le Florain'):
+            if (payment['related']['user']['display'] == 'Le Florain'):
+                if (payment['transactionNumber'] != 'EFL-0000000075'):
+                    totalreconversion = totalreconversion + float(payment['amount'])
+            else:
                 totalreconversion = totalreconversion + float(payment['amount'])
-	# Reconversion numérique vers euros
+        # Reconversion numérique vers euros
         if (payment['type']['internalName'] == 'comptePro.toDebit'):
             totalreconversion = totalreconversion + float(payment['amount'])
-    #print(totalreconversion)
     sold = float(totalinv)+float(total)
     if (sold != 0):
         strmsg+="ERREUR CRITIQUE"+"\n"
@@ -44,7 +60,9 @@ def checkBalancesCyclos(cyclos, strmsg):
     else:
         strmsg+="Total des soldes des comptes : "+str(total)+"\n"
         strmsg+="Solde du compte de débit : "+str(totalinv)+"\n"
-    totalinv = float(totalinv) - totalreconversion
+    # On enlève 140 du remboursement de mortimer dubois
+    totalinv = float(totalinv) - 140 - totalreconversion
+    strmsg+="Total change dans Cyclos "+str(float(totalinv))+"\n"
     return float(totalinv),strmsg
 
 def checkPaimentsMollie(mollie, strmsg):
@@ -63,9 +81,10 @@ cyclos = Cyclos()
 strmsg = ""
 totalCyclos, strmsg = checkBalancesCyclos(cyclos, strmsg)
 mo = Mollie()
-totolMollie, strmsg = checkPaimentsMollie(mo, strmsg)
-if (abs(totalCyclos) != abs(totolMollie)):
-    diff = abs(totalCyclos)-abs(totolMollie)
+totalMollie, strmsg = checkPaimentsMollie(mo, strmsg)
+monitorLogger.info(LOG_HEADER + '[-] '+strmsg)
+if (abs(totalCyclos) != abs(totalMollie)):
+    diff = abs(totalCyclos)-abs(totalMollie)
     strmsg+="ERREUR - Différence de "+str(diff)
     msg.set_content(strmsg)
     print(strmsg)
