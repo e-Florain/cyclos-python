@@ -3,6 +3,7 @@
 import cyclos
 import re
 import logging
+import json
 import os
 from cyclos import Cyclos
 from mollie import Mollie
@@ -23,9 +24,16 @@ fileHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'monitor'), max
 fileHandler.setFormatter(logFormatter)
 monitorLogger.addHandler(fileHandler)
 
+def get_ignore_payments():
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.cyclos['ignorePayments']) as data_file:
+            listignorepayments = json.load(data_file)
+        #print(listignorepayments)
+        return listignorepayments
+
 def checkBalancesCyclos(cyclos, strmsg):
     #info = cyclos.getBalances()
     #pprint(info['accountTypes'])
+    listignorepayments = get_ignore_payments()
     total = 0
     info = cyclos.getUserBalancesSummary("user")
     total = total+float(info['total']['sum'])
@@ -35,23 +43,32 @@ def checkBalancesCyclos(cyclos, strmsg):
     #print(total)
     info = cyclos.getAccount('system')
     totalinv = float(info[0]['status']['balance'])
-
     #get payments system
     listpayments = cyclos.getTransactions('system')
     #print(listpayments)
     totalreconversion = 0
-    totalreconversion = 0
+    #totalchange = 0
+    #totalchange2 = 0
+    #nbchange = 0
+    #for payment in listpayments:
+    #    if (payment['type']['internalName'] == 'debit.toUser'):
+    #        totalchange2+=float(payment['amount'])
+        #if (re.match('Transaction via Mollie Id', payment['description']) is not None):
+        #    totalchange+=float(payment['amount'])
+        #    nbchange+=1
+    #print(totalchange)
+    #print(nbchange)
+    #print(totalchange2)
+
     for payment in listpayments:
         # Reconversion papiers vers numérique
         if (payment['type']['internalName'] == 'debit.toPro'):
-            if (payment['related']['user']['display'] == 'Le Florain'):
-                if (payment['transactionNumber'] != 'EFL-0000000075'):
-                    totalreconversion = totalreconversion + float(payment['amount'])
-            else:
+            if (payment['transactionNumber'] not in listignorepayments):
                 totalreconversion = totalreconversion + float(payment['amount'])
         # Reconversion numérique vers euros
         if (payment['type']['internalName'] == 'comptePro.toDebit'):
-            totalreconversion = totalreconversion + float(payment['amount'])
+            if (payment['transactionNumber'] not in listignorepayments):
+                totalreconversion = totalreconversion + float(payment['amount'])
     sold = float(totalinv)+float(total)
     if (sold != 0):
         strmsg+="ERREUR CRITIQUE"+"\n"
@@ -60,8 +77,17 @@ def checkBalancesCyclos(cyclos, strmsg):
     else:
         strmsg+="Total des soldes des comptes : "+str(total)+"\n"
         strmsg+="Solde du compte de débit : "+str(totalinv)+"\n"
+    
     # On enlève 140 du remboursement de mortimer dubois
-    totalinv = float(totalinv) - 140 - totalreconversion
+    # On enlève les paiements ignorés
+    totalignorepayment = 0
+    for key in listignorepayments.keys():
+        if (listignorepayments[key]['type'] == 'toUser'):
+            for payment in listpayments:
+                if (payment['transactionNumber'] == key):
+                    totalignorepayment = totalignorepayment + float(payment['amount'])
+    totalinv = float(totalinv) - totalreconversion - totalignorepayment
+    strmsg+="Total reconversion "+str(float(totalreconversion))+"\n"
     strmsg+="Total change dans Cyclos "+str(float(totalinv))+"\n"
     return float(totalinv),strmsg
 
