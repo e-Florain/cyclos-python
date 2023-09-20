@@ -8,6 +8,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from requests.auth import HTTPBasicAuth
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import datetime
 import config as cfg
 import cyclos
@@ -24,6 +25,14 @@ fileHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'mollie'), maxB
                                   backupCount=1500)
 fileHandler.setFormatter(logFormatter)
 paiementLogger.addHandler(fileHandler)
+
+odooLogger = logging.getLogger('odoo')
+odooLogger.setLevel(logging.DEBUG)
+odooLogger.propagate = False
+fileodooHandler = RotatingFileHandler("{0}/{1}.log".format(LOG_PATH, 'odoo'), maxBytes=2000000,
+                                  backupCount=1500)
+fileodooHandler.setFormatter(logFormatter)
+odooLogger.addHandler(fileodooHandler)
 
 class Mollie:
 
@@ -212,7 +221,13 @@ class Mollie:
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
-    def checkPaiementAdhMollie(self):
+    def get_old_adhpayments(self):
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions']) as data_file:
+            listadhesions = json.load(data_file)
+        #print(listadhesions)
+        return listadhesions
+
+    def checkPaiementAdhMollie(self, simulate):
         resultsAdhMensuelle={}
         resultsAdhAnnuelle={}
         payments = self.get_payments(500)
@@ -222,26 +237,42 @@ class Mollie:
                 if (payment['status'] == "paid"):
                     adhval=float(payment['amount']['value'])
                     infoscustomer = self.get_user(payment['customerId'])
-                    resultsAdhMensuelle[infoscustomer['email']] = {}
-                    resultsAdhMensuelle[infoscustomer['email']]['date'] = payment['paidAt']
-                    resultsAdhMensuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
-                    #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
+                    if (infoscustomer['email'] not in resultsAdhMensuelle):
+                        resultsAdhMensuelle[infoscustomer['email']] = {}
+                        resultsAdhMensuelle[infoscustomer['email']]['date'] = payment['paidAt']
+                        resultsAdhMensuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
+                        resultsAdhMensuelle[infoscustomer['email']]['orderdate'] = payment['createdAt']
+                        resultsAdhMensuelle[infoscustomer['email']]['paidAt'] = payment['paidAt']
+                        resultsAdhMensuelle[infoscustomer['email']]['orderid'] = payment['id']
+                        resultsAdhMensuelle[infoscustomer['email']]['state'] = payment['status']
+                        resultsAdhMensuelle[infoscustomer['email']]['description'] = payment['description']
+                        resultsAdhMensuelle[infoscustomer['email']]['method'] = payment['method']
+                        #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
             if (re.match('Adhésion Florain Annuelle', payment['description']) is not None):
                 if (payment['status'] == "paid"):
                     adhval=float(payment['amount']['value'])
                     infoscustomer = self.get_user(payment['customerId'])
-                    resultsAdhAnnuelle[infoscustomer['email']] = {}
-                    resultsAdhAnnuelle[infoscustomer['email']]['date'] = payment['paidAt']
-                    resultsAdhAnnuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
-                    #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
+                    if (infoscustomer['email'] not in resultsAdhMensuelle):
+                        resultsAdhAnnuelle[infoscustomer['email']] = {}
+                        resultsAdhAnnuelle[infoscustomer['email']]['date'] = payment['paidAt']
+                        resultsAdhAnnuelle[infoscustomer['email']]['amount'] = float(payment['amount']['value'])
+                        resultsAdhAnnuelle[infoscustomer['email']]['orderdate'] = payment['createdAt']
+                        resultsAdhAnnuelle[infoscustomer['email']]['paidAt'] = payment['paidAt']
+                        resultsAdhAnnuelle[infoscustomer['email']]['orderid'] = payment['id']
+                        resultsAdhAnnuelle[infoscustomer['email']]['state'] = payment['status']
+                        resultsAdhAnnuelle[infoscustomer['email']]['description'] = payment['description']
+                        resultsAdhAnnuelle[infoscustomer['email']]['method'] = payment['method']
+                        #print(infoscustomer['email']+" "+str(adhval)+" "+payment['paidAt'])
         results={}
         results['AdhMensuelle'] = resultsAdhMensuelle
         results['AdhAnnuelle'] = resultsAdhAnnuelle
-        self.checkOdooAdhExpires(results)
+        
+        self.checkOdooAdhExpires(results, simulate)
 
-    def checkOdooAdhExpires(self, resultsMollie):
+    def checkOdooAdhExpires(self, resultsMollie, simulate):
         o2c = Odoo2Cyclos()
         listadhs = o2c.getOdooAdhs()
+        listadhpayments=self.get_old_adhpayments()
         datetoday = datetime.datetime.now()
         for adh in listadhs:
             if (adh['account_cyclos'] == True):
@@ -250,16 +281,67 @@ class Mollie:
                     if (m is not None):
                         dateadh = datetime.datetime.strptime(m.group(1), '%d %b %Y')
                         if (datetoday >= dateadh):
-                            #print(adh)
-                            #print(dateadh.isoformat())
-                            #print(adh['email'])
                             if (adh['email'] in resultsMollie['AdhMensuelle']):
-                                print(adh['email']+" MENSUELLE "+resultsMollie['AdhMensuelle'][adh['email']]['date'])
+                                date_format = '%Y-%m-%dT%H:%M:%S+00:00'
+                                date_mollie = datetime.datetime.strptime(resultsMollie['AdhMensuelle'][adh['email']]['paidAt'], date_format)
+                                date_adh_dec_1 = dateadh - relativedelta(months=1)
+                                if (date_mollie > date_adh_dec_1):
+                                    if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
+                                        if (not simulate):
+                                            res = o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhMensuelle'][adh['email']]['amount']))
+                                            print(res)
+                                        else:
+                                            print('postOdooAdhMembership AdhMensuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhMensuelle'][adh['email']]['amount']))
+                                        odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhMensuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhMensuelle'][adh['email']]['amount']))
+                                        print(adh['email']+" MENSUELLE "+resultsMollie['AdhMensuelle'][adh['email']]['date'])
+                                        tmp = {
+                                            'date': resultsMollie['AdhMensuelle'][adh['email']]['date'],
+                                            'orderdate': resultsMollie['AdhMensuelle'][adh['email']]['orderdate'],
+                                            'orderid': resultsMollie['AdhMensuelle'][adh['email']]['orderid'],
+                                            'state': resultsMollie['AdhMensuelle'][adh['email']]['state'],
+                                            'description': resultsMollie['AdhMensuelle'][adh['email']]['description'],
+                                            'method': resultsMollie['AdhMensuelle'][adh['email']]['method'],
+                                            'amount': resultsMollie['AdhMensuelle'][adh['email']]['amount']
+                                        }
+                                        if (simulate):
+                                            tmp['simulate'] = True
+                                        else:
+                                            tmp['simulate'] = False
+                                        listadhpayments[resultsMollie['AdhMensuelle'][adh['email']]['orderid']] = tmp
                             elif (adh['email'] in resultsMollie['AdhAnnuelle']):
-                                #o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
-                                print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
+                                if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
+                                    if (not simulate):
+                                        o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                        print(res)
+                                    else:
+                                        print('postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                    odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                    print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
+                                    tmp = {
+                                        'date': resultsMollie['AdhAnnuelle'][adh['email']]['date'],
+                                        'orderdate': resultsMollie['AdhAnnuelle'][adh['email']]['orderdate'],
+                                        'orderid': resultsMollie['AdhAnnuelle'][adh['email']]['orderid'],
+                                        'state': resultsMollie['AdhAnnuelle'][adh['email']]['state'],
+                                        'description': resultsMollie['AdhAnnuelle'][adh['email']]['description'],
+                                        'method': resultsMollie['AdhAnnuelle'][adh['email']]['method'],
+                                        'amount': resultsMollie['AdhAnnuelle'][adh['email']]['amount']
+                                    }
+                                    if (simulate):
+                                        tmp['simulate'] = True
+                                    else:
+                                        tmp['simulate'] = False
+                                    listadhpayments[resultsMollie['AdhMensuelle'][adh['email']]['orderid']] = tmp
                             else:
-                                print(adh['email']+" NONE")
+                                odooLogger.info(LOG_HEADER + '[-] '+adh['email'])
+                        else:
+                            if (adh['email'] in resultsMollie['AdhMensuelle']):
+                                if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
+                                    print(adh['email']+" Add membership product supp")
+                            elif (adh['email'] in resultsMollie['AdhAnnuelle']):
+                                if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
+                                    print("ERROR : "+adh['email'])                    
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions'], 'w') as outfile:
+            json.dump(listadhpayments, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
     def display_json(self, arr):
         print(json.dumps(arr, indent=4, sort_keys=True))
