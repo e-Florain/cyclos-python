@@ -288,6 +288,7 @@ class Mollie:
                                 if (date_mollie > date_adh_dec_1):
                                     if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
                                         tmp = {
+                                            'email': adh['email'],
                                             'date': resultsMollie['AdhMensuelle'][adh['email']]['date'],
                                             'orderdate': resultsMollie['AdhMensuelle'][adh['email']]['orderdate'],
                                             'orderid': resultsMollie['AdhMensuelle'][adh['email']]['orderid'],
@@ -312,6 +313,7 @@ class Mollie:
                             elif (adh['email'] in resultsMollie['AdhAnnuelle']):
                                 if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
                                     tmp = {
+                                        'email': adh['email'],
                                         'date': resultsMollie['AdhAnnuelle'][adh['email']]['date'],
                                         'orderdate': resultsMollie['AdhAnnuelle'][adh['email']]['orderdate'],
                                         'orderid': resultsMollie['AdhAnnuelle'][adh['email']]['orderid'],
@@ -333,13 +335,13 @@ class Mollie:
                                     listadhpayments[resultsMollie['AdhMensuelle'][adh['email']]['orderid']] = tmp
                             else:
                                 odooLogger.info(LOG_HEADER + '[-] '+adh['email'])
-                        else:
-                            if (adh['email'] in resultsMollie['AdhMensuelle']):
-                                if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
-                                    print(adh['email']+" Add membership product supp")
-                            elif (adh['email'] in resultsMollie['AdhAnnuelle']):
-                                if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
-                                    print("ERROR : "+adh['email'])
+                        #else:
+                            #if (adh['email'] in resultsMollie['AdhMensuelle']):
+                            #    if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
+                            #        print(adh['email']+" Add membership product supp")
+                            #elif (adh['email'] in resultsMollie['AdhAnnuelle']):
+                            #    if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
+                            #        print("ERROR : "+adh['email'])
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions'], 'w') as outfile:
             json.dump(listadhpayments, outfile, indent=4, sort_keys=False, separators=(',', ':'))
         return strtext
