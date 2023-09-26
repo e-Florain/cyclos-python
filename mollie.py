@@ -266,6 +266,7 @@ class Mollie:
         results={}
         results['AdhMensuelle'] = resultsAdhMensuelle
         results['AdhAnnuelle'] = resultsAdhAnnuelle
+        #print(results['AdhAnnuelle'])
         return self.checkOdooAdhExpires(results, simulate)
 
     def checkOdooAdhExpires(self, resultsMollie, simulate):
@@ -324,15 +325,17 @@ class Mollie:
                                     }
                                     if (not simulate):
                                         tmp['simulate'] = False
-                                        o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                        res = o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
                                         tmp['res'] = res
+                                        if (res != 200):
+                                                odooLogger.error(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
                                     else:
                                         tmp['simulate'] = True
                                         strtext+='postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])
                                         #print('postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
                                     odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
                                     #print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
-                                    listadhpayments[resultsMollie['AdhMensuelle'][adh['email']]['orderid']] = tmp
+                                    listadhpayments[resultsMollie['AdhAnnuelle'][adh['email']]['orderid']] = tmp
                             else:
                                 odooLogger.info(LOG_HEADER + '[-] '+adh['email'])
                         #else:
