@@ -52,6 +52,9 @@ class Odoo2Cyclos:
         self.nextcloud_login = cfg.nextcloud['login']
         self.nextcloud_password = cfg.nextcloud['password']
         self.nextcloud_path = cfg.nextcloud['path']
+        self.listmonk_url = cfg.listmonk['url']
+        self.listmonk_login = cfg.listmonk['login']
+        self.listmonk_password = cfg.listmonk['password']
         self.simulate = simulate
         #self.cyclos = cyclosvar.Cyclos()
         self.cyclos = Cyclos()
@@ -604,3 +607,15 @@ class Odoo2Cyclos:
             userinfo = self.cyclos.getUser(user['id'])
             listusers[user['email']] = userinfo
         return listusers
+
+    def getMembersListmonk(self, params={}):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getMembersListmonk')
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        resp = requests.get(self.listmonk_url+'/subscribers?per_page=100000', auth=HTTPBasicAuth(self.listmonk_login, self.listmonk_password), headers=headers, verify=False)
+        #print(resp.text)
+        try:
+            #self.displayJson(resp.text)
+            return json.loads(resp.text)
+        except ValueError as e:
+            print(resp.text)
+            return False
