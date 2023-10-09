@@ -332,7 +332,7 @@ class Mollie:
                                         if (res != 200):
                                             odooLogger.error(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
                                         else:
-                                            strtext+='Ajout d\'une adhésion à '+adh['firstname']+' '+adh['lastname']+" - "+adh['email']+" d'un montant de "+str(resultsMollie['AdhMensuelle'][adh['email']]['amount'])+"\n"
+                                            strtext+='Ajout d\'une adhésion à '+adh['firstname']+' '+adh['lastname']+" - "+adh['email']+" d'un montant de "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+"\n"
                                     else:
                                         tmp['simulate'] = True
                                         strtext+='postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])
