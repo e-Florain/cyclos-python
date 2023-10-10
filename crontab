@@ -23,4 +23,4 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 */15 *	* * *	root	python3 /root/cyclos-python/cronSync.py
 0 22  	* * *	root	python3 /root/cyclos-python/monitorCyclos.py
 0 21    * * *	root	python3 /root/cyclos-python/checkAdh.py
-15 21	* * *	root	python3 /root/cyclos-python/syncOdoo2Listmonk.py
+15 07	* * *	root	python3 /root/cyclos-python/syncOdoo2Listmonk.py
