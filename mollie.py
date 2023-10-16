@@ -226,6 +226,12 @@ class Mollie:
             listadhesions = json.load(data_file)
         #print(listadhesions)
         return listadhesions
+    
+    def get_old_adhesions_expired(self):
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions_expired']) as data_file:
+            listadhesions = json.load(data_file)
+        #print(listadhesions)
+        return listadhesions
 
     def checkPaiementAdhMollie(self, simulate):
         resultsAdhMensuelle={}
@@ -273,6 +279,7 @@ class Mollie:
         o2c = Odoo2Cyclos()
         listadhs = o2c.getOdooAdhs()
         listadhpayments=self.get_old_adhpayments()
+        listadhexpired = self.get_old_adhesions_expired()
         datetoday = datetime.datetime.now()
         strtext=""
         for adh in listadhs:
@@ -313,35 +320,49 @@ class Mollie:
                                         odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhMensuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhMensuelle'][adh['email']]['amount']))
                                         #print(adh['email']+" MENSUELLE "+resultsMollie['AdhMensuelle'][adh['email']]['date'])
                                         listadhpayments[resultsMollie['AdhMensuelle'][adh['email']]['orderid']] = tmp
+                                else:
+                                    if (adh['email'] not in listadhexpired):
+                                        listadhexpired[adh['email']] = adh['lastname']+" "+adh['firstname']
+                                    odooLogger.info(LOG_HEADER + '[-] Expired '+adh['email'])
                             elif (adh['email'] in resultsMollie['AdhAnnuelle']):
-                                if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
-                                    tmp = {
-                                        'email': adh['email'],
-                                        'date': resultsMollie['AdhAnnuelle'][adh['email']]['date'],
-                                        'orderdate': resultsMollie['AdhAnnuelle'][adh['email']]['orderdate'],
-                                        'orderid': resultsMollie['AdhAnnuelle'][adh['email']]['orderid'],
-                                        'state': resultsMollie['AdhAnnuelle'][adh['email']]['state'],
-                                        'description': resultsMollie['AdhAnnuelle'][adh['email']]['description'],
-                                        'method': resultsMollie['AdhAnnuelle'][adh['email']]['method'],
-                                        'amount': resultsMollie['AdhAnnuelle'][adh['email']]['amount']
-                                    }
-                                    if (not simulate):
-                                        tmp['simulate'] = False
-                                        res = o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
-                                        tmp['res'] = res
-                                        if (res != 200):
-                                            odooLogger.error(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                date_format = '%Y-%m-%dT%H:%M:%S+00:00'
+                                date_mollie = datetime.datetime.strptime(resultsMollie['AdhAnnuelle'][adh['email']]['paidAt'], date_format)
+                                date_adh_dec_1 = dateadh - relativedelta(months=1)
+                                if (date_mollie > date_adh_dec_1):
+                                    if (resultsMollie['AdhAnnuelle'][adh['email']]['orderid'] not in listadhpayments):
+                                        tmp = {
+                                            'email': adh['email'],
+                                            'date': resultsMollie['AdhAnnuelle'][adh['email']]['date'],
+                                            'orderdate': resultsMollie['AdhAnnuelle'][adh['email']]['orderdate'],
+                                            'orderid': resultsMollie['AdhAnnuelle'][adh['email']]['orderid'],
+                                            'state': resultsMollie['AdhAnnuelle'][adh['email']]['state'],
+                                            'description': resultsMollie['AdhAnnuelle'][adh['email']]['description'],
+                                            'method': resultsMollie['AdhAnnuelle'][adh['email']]['method'],
+                                            'amount': resultsMollie['AdhAnnuelle'][adh['email']]['amount']
+                                        }
+                                        if (not simulate):
+                                            tmp['simulate'] = False
+                                            res = o2c.postOdooAdhMembership(adh['email'], adh['firstname']+" "+adh['lastname'], str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                            tmp['res'] = res
+                                            if (res != 200):
+                                                odooLogger.error(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                            else:
+                                                strtext+='Ajout d\'une adhésion à '+adh['firstname']+' '+adh['lastname']+" - "+adh['email']+" d'un montant de "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+"\n"
                                         else:
-                                            strtext+='Ajout d\'une adhésion à '+adh['firstname']+' '+adh['lastname']+" - "+adh['email']+" d'un montant de "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+"\n"
-                                    else:
-                                        tmp['simulate'] = True
-                                        strtext+='postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])
-                                        #print('postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
-                                    odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
-                                    #print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
-                                    listadhpayments[resultsMollie['AdhAnnuelle'][adh['email']]['orderid']] = tmp
+                                            tmp['simulate'] = True
+                                            strtext+='postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])
+                                            #print('postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                        odooLogger.info(LOG_HEADER + '[-] postOdooAdhMembership AdhAnnuelle '+adh['email']+' '+adh['firstname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount']))
+                                        #print(adh['email']+" "+adh['firstname']+" "+adh['lastname']+" "+str(resultsMollie['AdhAnnuelle'][adh['email']]['amount'])+" ANNUELLE "+resultsMollie['AdhAnnuelle'][adh['email']]['date'])
+                                        listadhpayments[resultsMollie['AdhAnnuelle'][adh['email']]['orderid']] = tmp
+                                else:
+                                    if (adh['email'] not in listadhexpired):
+                                        listadhexpired[adh['email']] = adh['lastname']+" "+adh['firstname']
+                                    odooLogger.info(LOG_HEADER + '[-] Expired '+adh['email'])
                             else:
-                                odooLogger.info(LOG_HEADER + '[-] '+adh['email'])
+                                if (adh['email'] not in listadhexpired):
+                                    listadhexpired[adh['email']] = adh['lastname']+" "+adh['firstname']
+                                odooLogger.info(LOG_HEADER + '[-] Expired '+adh['email'])
                         #else:
                             #if (adh['email'] in resultsMollie['AdhMensuelle']):
                             #    if (resultsMollie['AdhMensuelle'][adh['email']]['orderid'] not in listadhpayments):
@@ -351,6 +372,8 @@ class Mollie:
                             #        print("ERROR : "+adh['email'])
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions'], 'w') as outfile:
             json.dump(listadhpayments, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions_expired'], 'w') as outfile:
+            json.dump(listadhexpired, outfile, indent=4, sort_keys=False, separators=(',', ':'))    
         return strtext
 
     def display_json(self, arr):
