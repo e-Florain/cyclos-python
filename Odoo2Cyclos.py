@@ -619,3 +619,16 @@ class Odoo2Cyclos:
         except ValueError as e:
             print(resp.text)
             return False
+        
+    def putMembersListmonk(self, data={}):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'putMembersListmonk')
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data['status'] = "enabled"
+        data['lists'] = [7]
+        resp = requests.post(self.listmonk_url+'/subscribers', auth=HTTPBasicAuth(self.listmonk_login, self.listmonk_password), verify=False, data=json.dumps(data), headers=headers)
+        try:
+            #self.displayJson(resp.text)
+            return json.loads(resp.text)
+        except ValueError as e:
+            print(resp.text)
+            return False
