@@ -5,6 +5,9 @@ from filelock import FileLock
 from Odoo2Cyclos import Odoo2Cyclos
 import smtplib
 from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
 import random
 import string
 import json
@@ -17,7 +20,6 @@ letters = string.ascii_lowercase
 url = cfg.hostname['url']
 smtp = cfg.smtp['ip']
 
-msg = EmailMessage()
 o2c.simulate = True
 # Get Changes Adhs
 filename = o2c.getChangesAdhs()
@@ -52,12 +54,18 @@ with FileLock(os.path.dirname(os.path.abspath(__file__)) + "/myfile2.txt"):
     with open(os.path.dirname(os.path.abspath(__file__))+'/url.key', 'w') as outfile:
         json.dump(keysjsons, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 #print(str)
-msg.set_content(str)
-msg['Subject'] = f'Attention modifications à faire sur cyclos'
-msg['From'] = "odoo@eflorain.fr"
-msg['To'] = "tech@florain.fr"
+msg = MIMEMultipart()
+msg.attach(MIMEText(str, "plain", "utf-8"))
+
+#msg.set_content(str)
+varfrom = "odoo@florain.fr"
+varto = "tech@florain.fr"
+msg['Subject'] = Header(f'Attention modifications à faire sur cyclos', "utf-8")
+msg['From'] = varfrom
+msg['To'] = varto
+#msg['To'] = "groche@guigeek.org"
 
 if (str != ""):
     s = smtplib.SMTP(smtp)
-    s.send_message(msg)
+    s.sendmail(varfrom, varto, msg.as_string())
     s.quit()
