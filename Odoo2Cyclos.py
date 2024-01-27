@@ -380,7 +380,7 @@ class Odoo2Cyclos:
                     changes['type'] = 'create'
                     changes['dbtochange'] = 'cyclos'
                     infostocreate = dict()
-                    infostocreate['email'] = v['email']
+                    infostocreate['email'] = v['contact_email']
                     #infostocreate['adh_id'] = v['adh_id']
                     infostocreate['name'] = unaccented_string
                     infostocreate['addresses'] = addresses
@@ -619,15 +619,29 @@ class Odoo2Cyclos:
         except ValueError as e:
             print(resp.text)
             return False
-        
-    def putMembersListmonk(self, data={}):
-        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'putMembersListmonk')
+    
+    # create a subscriber in listmonk
+    def postMembersListmonk(self, data={}):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'postMembersListmonk')
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data['status'] = "enabled"
         data['lists'] = [7]
         resp = requests.post(self.listmonk_url+'/subscribers', auth=HTTPBasicAuth(self.listmonk_login, self.listmonk_password), verify=False, data=json.dumps(data), headers=headers)
         try:
             #self.displayJson(resp.text)
+            return json.loads(resp.text)
+        except ValueError as e:
+            print(resp.text)
+            return False
+    
+    # update a subscriber in listmonk
+    def putMembersListmonk(self, id, data={}):
+        odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'putMembersListmonk')
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        data['status'] = "enabled"
+        data['lists'] = [7]
+        resp = requests.put(self.listmonk_url+'/subscribers/'+str(id), auth=HTTPBasicAuth(self.listmonk_login, self.listmonk_password), verify=False, data=json.dumps(data), headers=headers)
+        try:
             return json.loads(resp.text)
         except ValueError as e:
             print(resp.text)
