@@ -309,7 +309,7 @@ class Odoo2Cyclos:
                                     listchanges.append(changes)
                             if (list_found['Num_adherent_part'] == False):
                                 changes = dict()
-                                changes['field'] = 'Num_adherent_part'  
+                                changes['field'] = 'Num_adherent_part'
                                 changes['newvalue'] = int(v['ref'])
                                 changes['oldvalue'] = ""
                                 changes['type'] = 'modify'
@@ -497,7 +497,10 @@ class Odoo2Cyclos:
         if (type=="adhpros"):
             listusers = self.getOdooAdhpros(params=params)
         for user in listusers:
-            listusersbyemail[user['email']] = user
+            if (type=="adhs"):
+                listusersbyemail[user['email']] = user
+            if (type=="adhpros"):
+                listusersbyemail[user['contact_email']] = user
         return listusersbyemail
 
     def postQrCode(self, name):
