@@ -94,10 +94,16 @@ def checkBalancesCyclos(cyclos, strmsg):
 def checkPaimentsMollie(mollie, strmsg):
     total=0
     list_payments = mollie.get_all_payments()
+    list_chargebacks = mollie.get_all_chargebacks()
     for payment in list_payments:
         if (re.match('Change', payment['description']) is not None):
             if (payment['status'] == "paid"):
                 total=total+float(payment['amount']['value'])
+    for chargeback in list_chargebacks:
+        for payment in list_payments:
+            if (payment['id'] == chargeback['paymentId']):
+                if (re.match('Change', payment['description']) is not None):
+                    total = total-float(payment['amount']['value'])
     strmsg+="Total Change via Mollie :"+str(total)+"\n"
     return total,strmsg
 

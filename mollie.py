@@ -87,6 +87,43 @@ class Mollie:
             #print(len(list_payments))
         return list_payments
 
+    def get_all_chargebacks(self):
+        list_chargebacks = []
+        headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
+        url = cfg.mollie['url']+'/chargebacks?limit=150'
+        params = {}
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != 200):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+            exit
+        result = json.loads(resp.text)
+        list_chargebacks = result['_embedded']['chargebacks']
+        while (result['_links']['next'] is not None):
+            try:
+                resp = requests.get(result['_links']['next']['href'], params=params, headers=headers)
+            except requests.exceptions.Timeout:
+                paiementLogger.error(LOG_HEADER + '[-] Timeout')
+            except requests.exceptions.TooManyRedirects:
+                paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+            except requests.exceptions.RequestException as e:
+                paiementLogger.error(LOG_HEADER + '[-] Exception')
+                raise SystemExit(e)
+            if (resp.status_code != 200):
+                paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+                exit
+            result = json.loads(resp.text)
+            list_chargebacks = list_chargebacks + result['_embedded']['chargebacks']
+            #print(len(list_chargebacks))
+        return list_chargebacks
+
     def get_payments(self, limit):
         list_payments = []
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
