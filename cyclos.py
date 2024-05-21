@@ -27,6 +27,7 @@ class Cyclos:
         self.password = cfg.cyclos['password']
         self.debug = cfg.cyclos['debug']
         self.grpPro = "professionnels"
+        self.allusers = self.getAllUsers()
         requests.packages.urllib3.disable_warnings()
     
     def getAuth(self):
@@ -177,11 +178,13 @@ class Cyclos:
 
     def getIdFromEmail(self, email):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getIdFromEmail/'+email)
-        users = self.getAllUsers()
-        for user in users:
-            userdetails = self.getUser(user['email'])
-            if (userdetails['email'].lower() == email.lower()):
+        #users = self.getAllUsers()
+        for user in self.allusers:
+            if (user['email'].lower() == email.lower()):
                 return user['id']
+            #userdetails = self.getUser(user['email'])
+            #if (userdetails['email'].lower() == email.lower()):
+            #    return user['id']
         return False
 
     def addUser(self, username, name, email, password, numAdhPart, datefinadh):
@@ -278,6 +281,19 @@ class Cyclos:
         data = {'amount': amount, 'subject': accountID, 'type': 'debit.toUser', 'description': description}      
         #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         resp = requests.post(self.url+'/system/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        if (not resp.ok):
+            cyclosLogger.error(LOG_HEADER + resp.text)
+        if (self.debug):
+            cyclosLogger.debug(LOG_HEADER + resp.text)
+        return resp
+
+    def setPaymentUsertoSystem(self, accountID, amount, description):
+        cyclosLogger.info(LOG_HEADER + '[-] '+'setPaymentUsertoSystem/'+str(accountID)+'/'+str(amount)+'/'+description)
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        #id = self.getIdFromEmail(email)
+        data = {'amount': amount, 'subject': 'system', 'type': 'user.toDebit', 'description': description}      
+        #resp = requests.post(self.url+'/'+self.systemIDNEF+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
+        resp = requests.post(self.url+'/'+accountID+'/payments', auth=HTTPBasicAuth(self.user, self.password), verify=False, data=json.dumps(data), headers=headers)
         if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):

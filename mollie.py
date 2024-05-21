@@ -50,6 +50,12 @@ class Mollie:
         #print(listtransactions)
         return listtransactions
 
+    def get_old_chargebacks(self):
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['chargebacks']) as data_file:
+            listchargebacks = json.load(data_file)
+        #print(listchargebacks)
+        return listchargebacks
+
     def get_all_payments(self):
         list_payments = []
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
@@ -161,6 +167,43 @@ class Mollie:
             #print(len(list_payments))
         return list_payments
 
+    def get_chargebacks(self, limit):
+        list_chargebacks = []
+        headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
+        url = cfg.mollie['url']+'/chargebacks?limit=150'
+        params = {}
+        try:
+            resp = requests.get(url, params=params, headers=headers)
+        except requests.exceptions.Timeout:
+            paiementLogger.error(LOG_HEADER + '[-] Timeout')
+        except requests.exceptions.TooManyRedirects:
+            paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+        except requests.exceptions.RequestException as e:
+            paiementLogger.error(LOG_HEADER + '[-] Exception')
+            raise SystemExit(e)
+        if (resp.status_code != 200):
+            paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+            exit
+        result = json.loads(resp.text)
+        list_chargebacks = result['_embedded']['chargebacks']
+        while ((result['_links']['next'] is not None) and (len(list_chargebacks) < limit)):
+            try:
+                resp = requests.get(result['_links']['next']['href'], params=params, headers=headers)
+            except requests.exceptions.Timeout:
+                paiementLogger.error(LOG_HEADER + '[-] Timeout')
+            except requests.exceptions.TooManyRedirects:
+                paiementLogger.error(LOG_HEADER + '[-] TooManyRedirects')
+            except requests.exceptions.RequestException as e:
+                paiementLogger.error(LOG_HEADER + '[-] Exception')
+                raise SystemExit(e)
+            if (resp.status_code != 200):
+                paiementLogger.error(LOG_HEADER + '[-] status not 200 Mollie')
+                exit
+            result = json.loads(resp.text)
+            list_chargebacks = list_chargebacks + result['_embedded']['chargebacks']
+            #print(len(list_chargebacks))
+        return list_chargebacks
+
     def get_users(self):
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer '+self.key}
         url = cfg.mollie['url']+'/customers'
@@ -205,11 +248,14 @@ class Mollie:
         cyclos = Cyclos()
         msglog = LOG_HEADER + '[-] '
         listtransactions = self.get_old_payments()
+        listchargebacks = self.get_old_chargebacks()
         payments = self.get_payments(500)
+        chargebacks = self.get_chargebacks(500)
         for payment in payments:
             #paiementLogger.info(msglog + json.dumps(payment, indent=4, sort_keys=True))
             #self.display_json(payment)
             res = {}
+            msglog = LOG_HEADER + '[-] '
             if (payment['id'] not in listtransactions):
                 if 'paidAt' in payment:
                     changeCB = False
@@ -218,6 +264,14 @@ class Mollie:
                     if (((payment['description'] == "Change Florain") 
                     or changeCB)
                     and (payment['status'] == "paid")):
+                        if ('amountChargedBack' in payment):
+                            if (payment['amount']['value'] == payment['amountChargedBack']['value']):
+                                #print(payment['amountChargedBack'])
+                                continue
+                            else:
+                                amount = str(int(payment['amount']['value'])-int(payment['amountChargedBack']['value']))
+                        else:
+                            amount = payment['amount']['value']
                         tmp = {
                             'date': payment['paidAt'],
                             'orderdate': payment['createdAt'],
@@ -230,7 +284,7 @@ class Mollie:
                             #'paymentMeans': data['paymentMeans'],
                             'description': payment['description'],
                             'method': payment['method'],
-                            'amount': payment['amount']['value']
+                            'amount': amount
                         }
                         if 'customerId' in payment:
                             infoscustomer = self.get_user(payment['customerId'])
@@ -238,8 +292,8 @@ class Mollie:
                         amount = payment['amount']['value']
                         accountID = cyclos.getIdFromEmail(email)
                         if (accountID == False):
-                            paiementLogger.error(LOG_HEADER+"account cyclos not found")
-                            tmp['statusCyclos'] = "account cyclos not found"
+                            paiementLogger.error(LOG_HEADER+"account cyclos not found "+email)
+                            tmp['statusCyclos'] = "account cyclos not found "+email
                         #print(accountID)
                         if (self.simulate):
                             msglog += 'SIMULATE'
@@ -253,10 +307,46 @@ class Mollie:
                                 tmp['transactionCyclos'] = res_object['transactionNumber']
                             else:
                                 paiementLogger.error(LOG_HEADER+res.text)
-                        listtransactions[payment['id']] = tmp
+                            listtransactions[payment['id']] = tmp
+        
+        for chargeback in chargebacks:
+            res = {}
+            if (chargeback['id'] not in listchargebacks):
+                if (chargeback['paymentId'] in listtransactions):
+                    for payment in payments:
+                        if (payment['id'] == chargeback['paymentId']):
+                            break
+                    if payment['id'] in listtransactions:
+                        tmp = {
+                            'date': chargeback['createdAt'],
+                            'id': chargeback['id'],
+                            'description': chargeback['reason']['description'],
+                            'code': chargeback['reason']['code'],
+                            'amount': chargeback['amount']['value'],
+                            'settlementAmount': chargeback['settlementAmount']['value']
+                        }
+                        if 'customerId' in payment:
+                            infoscustomer = self.get_user(payment['customerId'])
+                            email = infoscustomer['email']
+                        amount = abs(float(chargeback['settlementAmount']['value']))
+                        accountID = cyclos.getIdFromEmail(email)
+                        if (accountID == False):
+                            paiementLogger.error(LOG_HEADER+"account cyclos not found "+email)
+                            tmp['statusCyclos'] = "account cyclos not found "+email
+                        paiementLogger.info(msglog + ' PAIEMENT AFTER CHARGEBACK : id:'+ str(accountID)+' amount:'+str(amount)+' Mollie:'+str(chargeback['id'])+' to: '+email)
+                        if ((not self.simulate) and (payment['mode'] != "test")):     
+                            res = cyclos.setPaymentUsertoSystem(accountID, amount,"Transaction via Mollie Id : "+str(payment['id']))
+                            res_object = json.loads(res.text)
+                            if ('transactionNumber' in res_object):
+                                tmp['transactionCyclos'] = res_object['transactionNumber']
+                            else:
+                                paiementLogger.error(LOG_HEADER+res.text)
+                            listchargebacks[chargeback['id']] = tmp
 
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['transactions'], 'w') as outfile:
             json.dump(listtransactions, outfile, indent=4, sort_keys=False, separators=(',', ':'))
+        with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['chargebacks'], 'w') as outfile:
+            json.dump(listchargebacks, outfile, indent=4, sort_keys=False, separators=(',', ':'))
 
     def get_old_adhpayments(self):
         with open(os.path.dirname(os.path.abspath(__file__))+'/'+cfg.mollie['adhesions']) as data_file:
