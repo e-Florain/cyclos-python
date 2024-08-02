@@ -121,7 +121,7 @@ totalCyclos, strmsg = checkBalancesCyclos(cyclos, strmsg)
 mo = Mollie()
 totalMollie, strmsg = checkPaimentsMollie(mo, strmsg)
 monitorLogger.info(LOG_HEADER + '[-] '+strmsg)
-if (abs(totalCyclos) != abs(totalMollie)):
+if (round(totalCyclos) != round(totalMollie)):
     diff = abs(totalCyclos)-abs(totalMollie)
     strmsg+="ERREUR - Différence de "+str(diff)
     msg.set_content(strmsg)
