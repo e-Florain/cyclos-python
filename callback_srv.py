@@ -13,7 +13,8 @@ import requests  # make http request to shutdown web server
 from flask import Flask
 from flask import request
 import time, signal
-from cherrypy import wsgiserver
+#from cherrypy import wsgiserver
+from cheroot import wsgi
 from filelock import FileLock
 from mollie import Mollie
 from cyclos import Cyclos
@@ -138,8 +139,8 @@ def monitor():
         diff = abs(totalCyclos)-abs(totolMollie)
         return ("ERREUR : "+str(diff))
 
-d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', 80), d)
+d = wsgi.WSGIPathInfoDispatcher({'/': app})
+server = wsgi.Server(('0.0.0.0', 80), d)
 
 if __name__ == '__main__':
     try:
