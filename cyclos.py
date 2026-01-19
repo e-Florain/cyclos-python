@@ -154,8 +154,8 @@ class Cyclos:
         resp = requests.get(self.url+'/users?pageSize=10000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
-        if (self.debug):
-            cyclosLogger.debug(LOG_HEADER + resp.text)
+        #if (self.debug):
+        #    cyclosLogger.debug(LOG_HEADER + resp.text)
         return json.loads(resp.text)
 
     def getUsers(self, group):
@@ -178,8 +178,9 @@ class Cyclos:
 
     def getIdFromEmail(self, email):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getIdFromEmail/'+email)
-        #users = self.getAllUsers()
-        for user in self.allusers:
+        users = self.getAllUsers()
+        for user in users:
+	#for user in self.allusers:
             if (user['email'].lower() == email.lower()):
                 return user['id']
             #userdetails = self.getUser(user['email'])
@@ -340,7 +341,7 @@ class Cyclos:
 
     def getTransactions(self, user):
         cyclosLogger.info(LOG_HEADER + '[-] '+'getTransactions/'+user)
-        resp = requests.get(self.url+'/'+user+'/transactions?pageSize=100000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
+        resp = requests.get(self.url+'/'+user+'/transactions?pageSize=1000000', auth=HTTPBasicAuth(self.user, self.password), verify=False)
         if (not resp.ok):
             cyclosLogger.error(LOG_HEADER + resp.text)
         if (self.debug):

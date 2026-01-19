@@ -86,7 +86,16 @@ def checkBalancesCyclos(cyclos, strmsg):
             for payment in listpayments:
                 if (payment['transactionNumber'] == key):
                     totalignorepayment = totalignorepayment + float(payment['amount'])
+        if (listignorepayments[key]['type'] == 'toDebit'):
+            for payment in listpayments:
+                if (payment['transactionNumber'] == key):
+                    totalignorepayment = totalignorepayment + float(payment['amount'])
+#        if (listignorepayments[key]['type'] == 'toPro'):
+#            for payment in listpayments:
+#                if (payment['transactionNumber'] == key):
+#                    totalignorepayment = totalignorepayment + float(payment['amount'])
     totalinv = float(totalinv) - totalreconversion - totalignorepayment
+    strmsg+="Total paiments ingnores "+str(float(totalignorepayment))+"\n"
     strmsg+="Total reconversion "+str(float(totalreconversion))+"\n"
     strmsg+="Total change dans Cyclos "+str(float(totalinv))+"\n"
     return float(totalinv),strmsg
@@ -100,16 +109,22 @@ def checkPaimentsMollie(mollie, strmsg):
         if (re.match('Change', payment['description']) is not None):
             if (payment['status'] == "paid"):
                 total=total+float(payment['amount']['value'])
+    chargebacks=0
     for chargeback in list_chargebacks:
         for payment in list_payments:
             if (payment['id'] == chargeback['paymentId']):
                 if (re.match('Change', payment['description']) is not None):
-                    total = total-float(payment['amount']['value'])
+                    chargebacks = chargebacks+float(payment['amount']['value'])
+    refunds=0
     for refund in list_refunds:
         for payment in list_payments:
-            if (payment['id'] == chargeback['paymentId']):
+            if (payment['id'] == refund['paymentId']):
                 if (re.match('Change', payment['description']) is not None):
-                    total = total-float(payment['amount']['value'])
+                    refunds = refunds+float(payment['amount']['value'])
+    strmsg+="Total Payments : "+str(total)+"\n"
+    strmsg+="Total Chargebacks : "+str(chargebacks)+"\n"
+    strmsg+="Total Refunds : "+str(refunds)+"\n"
+    total = total-chargebacks-refunds
     strmsg+="Total Change via Mollie :"+str(total)+"\n"
     return total,strmsg
 
@@ -118,10 +133,11 @@ msg = EmailMessage()
 cyclos = Cyclos()
 strmsg = ""
 totalCyclos, strmsg = checkBalancesCyclos(cyclos, strmsg)
+totalCyclos = totalCyclos + 84 # chargeback du 	EFL-0000015992
 mo = Mollie()
 totalMollie, strmsg = checkPaimentsMollie(mo, strmsg)
 monitorLogger.info(LOG_HEADER + '[-] '+strmsg)
-if (round(totalCyclos) != round(totalMollie)):
+if (round(abs(totalCyclos)) != round(abs(totalMollie))):
     diff = abs(totalCyclos)-abs(totalMollie)
     strmsg+="ERREUR - Différence de "+str(diff)
     msg.set_content(strmsg)

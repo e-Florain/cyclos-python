@@ -21,6 +21,7 @@ import random
 import config as cfg
 import importlib.util
 from cyclos import Cyclos
+from urllib.parse import urlencode
 #cyclos = importlib.util.spec_from_file_location("cyclos", "../cyclos.py")
 #cyclosvar = importlib.util.module_from_spec(cyclos)
 #cyclos.loader.exec_module(cyclosvar)
@@ -96,8 +97,10 @@ class Odoo2Cyclos:
         
     def getOdooAdhpros(self, params={}):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getOdooAdhpros')
+        paramsencoded = urlencode(params)
+        #print(paramsencoded)
         headers = {'x-api-key': self.key, 'Content-type': 'application/json', 'Accept': 'text/plain'}
-        resp = requests.get(self.url+'/getAdhpros', params=params, headers=headers, verify=False)
+        resp = requests.get(self.url+'/getAdhpros?'+paramsencoded, params=params, headers=headers, verify=False)
         #print(resp.text)
         return json.loads(resp.text)
 
@@ -160,8 +163,9 @@ class Odoo2Cyclos:
                 if (k not in listUsersCyclos):
                     #print("CREATE")
                     #print(v)    
-                    lastname_unaccented = unidecode.unidecode(v['lastname'])
-                    firstname_unaccented = unidecode.unidecode(v['firstname'])
+                    #lastname_unaccented = unidecode.unidecode(v['lastname'])
+                    #firstname_unaccented = unidecode.unidecode(v['firstname'])
+                    name = unidecode.unidecode(v['name'])
                     changes = dict()
                     listchanges = list()
                     changes['type'] = 'create'
@@ -185,7 +189,8 @@ class Odoo2Cyclos:
                         infostocreate['changeeuros'] = v['changeeuros']
 
                     #infostocreate['adh_id'] = v['adh_id']
-                    infostocreate['name'] = firstname_unaccented+" "+lastname_unaccented
+                    #infostocreate['name'] = firstname_unaccented+" "+lastname_unaccented
+                    infostocreate['name'] = name
                     changes['infos'] = infostocreate
                     listchanges.append(changes)
                     changesDB[k] = listchanges
@@ -195,9 +200,10 @@ class Odoo2Cyclos:
                         changed = False
                         changes = dict()
                         listchanges = list()
-                        lastname_unaccented = unidecode.unidecode(v['lastname'])
-                        firstname_unaccented = unidecode.unidecode(v['firstname'])
-                        name = firstname_unaccented+" "+lastname_unaccented
+                        #lastname_unaccented = unidecode.unidecode(v['lastname'])
+                        #firstname_unaccented = unidecode.unidecode(v['firstname'])
+                        #name = firstname_unaccented+" "+lastname_unaccented
+                        name = unidecode.unidecode(v['name'])
                         if (name != unidecode.unidecode(listUsersCyclos[k]["display"])):
                             #print (listUsersCyclos[k]["display"])
                             changes = dict()
@@ -310,6 +316,7 @@ class Odoo2Cyclos:
                             if (list_found['Num_adherent_part'] == False):
                                 changes = dict()
                                 changes['field'] = 'Num_adherent_part'
+                                #print(str(v['ref'])+' '+str(v['email']))
                                 changes['newvalue'] = int(v['ref'])
                                 changes['oldvalue'] = ""
                                 changes['type'] = 'modify'
@@ -491,11 +498,12 @@ class Odoo2Cyclos:
     def getUsersOdoo(self, type):
         odoo2cyclosLogger.info(LOG_HEADER + '[-] '+'getUsersOdoo '+type)
         listusersbyemail=dict()
-        params = {"account_cyclos": 't'}
+        params = {"account_cyclos": "t"}
+        parampros = {"account_cyclos": "'t'"}
         if (type=="adhs"):
             listusers = self.getOdooAdhs(params=params)
         if (type=="adhpros"):
-            listusers = self.getOdooAdhpros(params=params)
+            listusers = self.getOdooAdhpros(params=parampros)
         for user in listusers:
             if (type=="adhs"):
                 listusersbyemail[user['email']] = user

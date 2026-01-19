@@ -47,25 +47,28 @@ params = {"accept_newsletter": 't'}
 res2 = o2c.getOdooAdhs(params=params)
 odoo2listmonkLogger.info(LOG_HEADER + '[-] '+'Check Odoo in Listmonk')
 for res in res2:
-    if (res['email'] != None):
+    if (res['email'] != None and res['email'] != False):
+        #print(res['name'])
         email = res['email'].strip().lower()
         if (email not in listmonk_emails):
             if (re.match(r'^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$', email)):
                 odoo2listmonkLogger.info(LOG_HEADER + '[-] '+'postMembersListmonk '+email)
-                if ((res['lastname'] != None) and (res['firstname'] != None)):
-                    name = res['lastname']+" "+res['firstname']
-                else:
-                    name = res['lastname']
+                # if ((res['lastname'] != None) and (res['firstname'] != None)):
+                #     name = res['lastname']+" "+res['firstname']
+                # else:
+                #     name = res['lastname']
+                name = res['name']
                 data = {'email': email, 'name': name}
                 o2c.postMembersListmonk(data)
         elif (email not in mlc_emails):
             if (re.match(r'^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$', email)):
                 id = dict_subscribers[email]
                 odoo2listmonkLogger.info(LOG_HEADER + '[-] '+'putMembersListmonk '+email+'/'+str(id)+' in mlc')
-                if ((res['lastname'] != None) and (res['firstname'] != None)):
-                    name = res['lastname']+" "+res['firstname']
-                else:
-                    name = res['lastname']
+                # if ((res['lastname'] != None) and (res['firstname'] != None)):
+                #     name = res['lastname']+" "+res['firstname']
+                # else:
+                #     name = res['lastname']
+                name = res['name']
                 data = {'email': email, 'name': name}
                 o2c.putMembersListmonk(id, data)
 

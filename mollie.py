@@ -90,7 +90,7 @@ class Mollie:
                 exit
             result = json.loads(resp.text)
             list_payments = list_payments + result['_embedded']['payments']
-            #print(len(list_payments))
+        #print(list_payments)
         return list_payments
 
     def get_all_chargebacks(self):
