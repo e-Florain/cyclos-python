@@ -175,10 +175,12 @@ class Odoo2Cyclos:
                     #    next;
                     infostocreate['email'] = v['email']
                     # DateFinAdhesion
-                    res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                    #res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                    res = re.match('\d{4}-\d{2}-\d{2}', str(v["membership_stop"]))
                     if (res != None):
-                        date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
-                        infostocreate['DateFinAdhesion'] = date_object.strftime("%Y-%m-%d")
+                        #date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                        #infostocreate['DateFinAdhesion'] = date_object.strftime("%Y-%m-%d")
+                        infostocreate['DateFinAdhesion'] = str(v["membership_stop"])
                     else:
                         infostocreate['DateFinAdhesion'] = ""
                     # Num_adherent_part
@@ -217,10 +219,12 @@ class Odoo2Cyclos:
                             listchanges.append(changes)
                         if not 'customValues' in listUsersCyclos[k]:
                             # DateFinAdhesion
-                            res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                            res = re.match('\d{4}-\d{2}-\d{2}', str(v["membership_stop"]))
+                            #res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
                             if (res != None):
-                                date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
-                                datefinadh = date_object.strftime("%Y-%m-%d")
+                                #date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                                #datefinadh = date_object.strftime("%Y-%m-%d")
+                                datefinadh = str(v["membership_stop"])
                             else:
                                 datefinadh = ""
                             changes = dict()
@@ -258,10 +262,12 @@ class Odoo2Cyclos:
                             for customvalue in listUsersCyclos[k]['customValues']:
                                 if (customvalue['field']['internalName'] == "DateFinAdhesion"):
                                     list_found['DateFinAdhesion'] = True
-                                    res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
+                                    res = re.match('\d{4}-\d{2}-\d{2}', str(v["membership_stop"]))
+                                    #res = re.match('\w{3}, \d{2} \w{3} \d{4}', str(v["membership_stop"]))
                                     if (res != None):
-                                        date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
-                                        datefinadh = date_object.strftime("%Y-%m-%d")
+                                        #date_object = datetime.strptime(v["membership_stop"],"%a, %d %b %Y %H:%M:%S %Z")
+                                        #datefinadh = date_object.strftime("%Y-%m-%d")
+                                        datefinadh = str(v["membership_stop"])
                                         res2 = re.match('^'+datefinadh, customvalue['dateValue'])
                                         if (res2 == None):
                                             changes = dict()
